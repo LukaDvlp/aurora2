@@ -10,3 +10,5 @@ Aurora: Adaptive Utopia Recognition for On-site Rover Autonomy
 - FLASK (0.10.1 tested)
 http://flask.pocoo.org/
 
+- Colorcorrect (0.0.5 tested)
+https://pypi.python.org/pypi/colorcorrect
