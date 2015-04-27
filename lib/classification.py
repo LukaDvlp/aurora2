@@ -10,16 +10,25 @@ Output:
 Written by Kyohei Otsu <kyon@ac.jaxa.jp> in 2015-04-18
 """
 
-def classify(img, algorithm='sand_rock'):
-    '''
-        main function
-    '''
-    if algorithm == 'sand_rock':
-        label = classify_sand_rock(img)
-    elif algorithm == 'grass_rock':
-        label = classify_grass_rock(img)
-    else
-        print 'Invalid algorithm: ' + algorithm
+import numpy as np
+import cv2
+import sklearn
+
+import common
+
+
+@common.runonce
+def init_module():
+    global classifier
+    classifier = TerrainClassifier()
+
+
+def classify(img):
+    init_module()
+    label = np.zeros(img.shape, dtype=np.uint8)
+    label[:, :, 2] = 255 * classifier.classify(img)
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    label = cv2.dilate(cv2.erode(label, kernel), kernel)
     return label
 
 
@@ -28,6 +37,29 @@ def classify_sand_rock(img):
 
 def classify_grass_rock(img):
     pass
+
+
+
+class TerrainClassifier:
+    def __init__(self):
+        # initialize classifiers
+        pass
+    
+    def classify(self, img):
+        return self.sand_rock(img)
+
+    def sand_rock(self, img):
+        if img.ndim == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        label = np.array(np.logical_and(img > 0, img < 60), dtype=np.uint8)
+        cv2.imshow("lab", 255 * label)
+        cv2.waitKey(1)
+        return label
+
+        
+
+
 
 
 

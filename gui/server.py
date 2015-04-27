@@ -40,6 +40,7 @@ def makePath():
     np.savetxt(os.path.join(DATADIR, 'path.csv'), waypoints, delimiter=',')
     return "Path score: %s <br/> Execution Time: %.2f s" %(score, end_time - start_time)
 
+
 if __name__ == '__main__':
     app.run(debug=True)
 

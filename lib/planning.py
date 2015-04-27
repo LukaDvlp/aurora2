@@ -19,6 +19,7 @@ import numpy as np
 import cv2
 
 import astar
+import rover
 
 
 class Planner:
@@ -37,7 +38,7 @@ class Planner:
         start_pos = tuple([int(p * self.scale) for p in start_pos])
         goal_pos  = tuple([int(p * self.scale) for p in goal_pos])
     
-        costs = self.convert_costmap(cmap, self.scale * 0.9 / 0.02)
+        costs = self.convert_costmap(cmap)
         for i, j in product(range(cmap.shape[0]), range(cmap.shape[1])):
             self.nodes[i][j].cost = costs[i][j]
 
@@ -53,12 +54,13 @@ class Planner:
 
 
 
-    def convert_costmap(self, cmap, rover_width=25):
+    def convert_costmap(self, cmap):
         '''
             convert multi channel terrain map to single-channel cost map
         '''
-        kernel = np.ones((int(rover_width), int(rover_width)), np.uint8)
-        inv_trav = np.array(cmap[:, :, 0] > 0, dtype=np.uint8)
+        diag_pix = int(self.scale * rover.diag() / 0.02)
+        kernel = np.ones((diag_pix, diag_pix), np.uint8)
+        inv_trav = np.array(cmap[:, :, 2] > 0, dtype=np.uint8)
         inv_trav = cv2.dilate(inv_trav, kernel)
         return inv_trav
 
