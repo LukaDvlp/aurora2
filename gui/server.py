@@ -31,6 +31,7 @@ def makePath():
     startV = int(float(request.form['startV']))
     goalU = int(float(request.form['goalU']))
     goalV = int(float(request.form['goalV']))
+
     tmap = cv2.imread(os.path.join(DATADIR, 'cmap.png'))
     start_time = time.time()
     waypoints, score = planner.plan_path(tmap, (startV, startU), (goalV, goalU));

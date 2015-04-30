@@ -23,15 +23,6 @@ def init_module():
     classifier = TerrainClassifier()
 
 
-def classify(img):
-    init_module()
-    label = np.zeros(img.shape, dtype=np.uint8)
-    label[:, :, 2] = 255 * classifier.classify(img)
-    kernel = np.ones((5, 5), dtype=np.uint8)
-    label = cv2.dilate(cv2.erode(label, kernel), kernel)
-    return label
-
-
 def classify_sand_rock(img):
     pass
 

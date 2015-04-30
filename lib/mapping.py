@@ -16,17 +16,12 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from skimage import color
 
 import aurora
+import imgproc
+import localization
 import rover
-import common
-
-
-@common.runonce
-def init_module():  
-    # meters in pixel
-    global resolution
-    resolution = 0.02
 
 
 ################################################################################
@@ -96,6 +91,11 @@ class Mapper():
         disp = cv2.warpPerspective(m, np.linalg.inv(self.wHi), self.shape[:2])
         return disp
 
+    
+    def get_pose_pix(self, wTc):
+        C, pose = self.compose_homography(wTc)
+        return pose
+
 
     def get_homography(self, dst=(-0.5, 0.6, 1., 1.)):
         '''
@@ -104,13 +104,13 @@ class Mapper():
         dst_yx = self.rect2pts(dst)
         dst_w = np.vstack((dst_yx[::-1,:], np.zeros(4)))
         dst_pix = self.to_pix(dst_yx)
-        src_pix = aurora.imgproc.projectp(dst_w, T=rover.img2base(), K=rover.K())
+        src_pix = imgproc.projectp(dst_w, T=rover.img2base(), K=rover.K())
         return cv2.findHomography(src_pix.T, dst_pix.T)[0]
 
 
     def compose_homography(self, wTc):
-        xyz = aurora.localization.get_position(wTc)
-        ang = aurora.localization.get_angle(wTc)
+        xyz = localization.get_position(wTc)
+        ang = localization.get_angle(wTc)
         cy = math.cos(ang[0])
         sy = math.sin(ang[0])
         C = np.array([[ cy, sy, self.to_pix(xyz[1]) + self.center[0]],
@@ -156,7 +156,6 @@ class Mapper():
         return True
 
 
-
     def to_pix(self, meter):
         return meter / self.resolution
 
@@ -173,9 +172,10 @@ if __name__ == '__main__':
 
     SRCDIR = '/Users/kyoheee/FieldData/MarsYard2015/freerun03'
 
-    vecT = aurora.localization.read_from_file(os.path.join(SRCDIR, 'vo_raw.txt'))
-    vecP = aurora.localization.concat_motion(vecT, plane_assumption=1)
+    vecT = localization.read_from_file(os.path.join(SRCDIR, 'vo_raw.txt'))
+    vecP = localization.concat_motion(vecT, plane_assumption=1)
 
+    resolution = 0.02  # meter/pix
     mapper = Mapper((500, 500), resolution, lamb=1)
     class_mapper = Mapper((500, 500), resolution, lamb=0.6)
     cv2.namedWindow("test")
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         imgR = grey_world(imgR)
 
         # tilt estimation
-        rover.tilt = aurora.imgproc.compute_tilt(img, imgR, lamb=0.6)
+        rover.tilt = imgproc.compute_tilt(img, imgR, lamb=0.6)
 
         # map
         img[:100, :, :] = 0
@@ -204,7 +204,7 @@ if __name__ == '__main__':
         os.rename('/Users/kyoheee/Codes/aurora/gui/static/data/tmap_tmp.png', '/Users/kyoheee/Codes/aurora/gui/static/data/tmap.png')
 
         # classification
-        label = aurora.classification.classify(img)
+        label = aurora.classify(img)
         class_mapper.add_image(label, wTc)
         cmap = class_mapper.get_map(centered=True)
         cmap = np.fliplr(np.flipud(cmap))

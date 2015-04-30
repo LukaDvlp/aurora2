@@ -22,6 +22,10 @@ import astar
 import rover
 
 
+################################################################################
+# A* planning class
+################################################################################
+
 class Planner:
     def __init__(self, shape):
         self.scale = 0.1
@@ -43,15 +47,17 @@ class Planner:
             self.nodes[i][j].cost = costs[i][j]
 
         paths = astar.AStarGrid(self.graph)
-        start, end = self.nodes[start_pos[0]][start_pos[1]], self.nodes[goal_pos[0]][goal_pos[1]]
-        path, score = paths.search(start, end)
-        if path is None:
-            logging.error("No path found")
-            return None, None
-        else:
-            waypoints = [[p.x, p.y] for p in path]
-            return np.array(waypoints) / self.scale, score
-
+        try:
+            start, end = self.nodes[start_pos[0]][start_pos[1]], self.nodes[goal_pos[0]][goal_pos[1]]
+            path, score = paths.search(start, end)
+            if path is not None:
+                waypoints = [[p.x, p.y] for p in path]
+                return np.array(waypoints) / self.scale, score
+            else:
+                logging.error("No path found")
+        except:
+            logging.error("Start/Goal nodes are not valid")
+        return None, None
 
 
     def convert_costmap(self, cmap):
@@ -60,7 +66,7 @@ class Planner:
         '''
         diag_pix = int(self.scale * rover.diag() / 0.02)
         kernel = np.ones((diag_pix, diag_pix), np.uint8)
-        inv_trav = np.array(cmap[:, :, 2] > 0, dtype=np.uint8)
+        inv_trav = np.array(np.sum(cmap[:, :, :3], axis=2), dtype=np.uint8)
         inv_trav = cv2.dilate(inv_trav, kernel)
         return inv_trav
 
