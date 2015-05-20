@@ -1,5 +1,5 @@
 # aurora
-Aurora: Adaptive Utopia Recognition for On-site Rover Autonomy
+Aurora: Adaptive Unified Recognition for On-site Rover Autonomy
 
 
 
