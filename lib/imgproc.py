@@ -7,6 +7,7 @@ Written by Kyohei Otsu <kyon@ac.jaxa.jp> since 2015-04-20
 import numpy as np
 import cv2
 from sklearn import linear_model
+from skimage import color
 
 import transformations as tfm
 import rover
@@ -42,10 +43,25 @@ def projectp(pts, T, K):
     return np.array([impt[0, :] / impt[2, :], impt[1, :] / impt[2, :]])
 
 
+def reproject_map(imD, Q):
+    x, y = np.arange(imD.shape[1]), np.arange(imD.shape[0])
+    xv, yv = np.meshgrid(x, y)
+    M = np.vstack((xv.ravel(), yv.ravel(), imD.ravel(), np.ones((1, imD.size))))
+    p = np.dot(Q, M)
+    Pcam = p[:3, :] / np.tile(p[3, :], (3, 1))
+    Pcam[:, np.isinf(Pcam[2, :])] = 0
+    Pcam[:, Pcam[2, :] > 7] = 0
+    Prov = transformp(Pcam, rover.base2img())
+    Prov[:, Pcam[2, :] == 0] = 0
+    XYZ = np.reshape(np.transpose(Prov), (imD.shape[0], imD.shape[1], 3))
+
+    return XYZ
+    
+
 def compute_tilt(imL, imR, lamb=1):
     init_module()
 
-    disp = matcher.dense(imL, imR, scale=0.5)
+    disp = matcher.dense(imL, imR, scale=1)
     vd.from_dense(disp)
     tilt = vd.tilt()
     if tilt is not None:
@@ -242,14 +258,15 @@ def get_mask(shape):
     h, w = shape[:2]
     margin = 20
     mask = np.zeros((h, w), np.uint8)
-    mask[h/4:h-margin, margin:-margin] = 255
+    mask[h/6:h-margin, margin:-margin] = 255
     return mask
 
 
 ################################################################################
 # Sample code
 ################################################################################
-if __name__ == '__main__':
+#if __name__ == '__main__':
+if 0:
     import os
     import time
 
@@ -293,3 +310,36 @@ if __name__ == '__main__':
 
     raw_input()
 
+
+
+if __name__ == '__main__':
+    import os
+    init_module()
+
+    SRCDIR = '/Users/kyoheee/FieldData/MarsYard2015/bedrock01'
+    for i in range(541, 820):
+        imL = cv2.imread(os.path.join(SRCDIR, 'img/L{:06d}.png'.format(i)))
+        imR = cv2.imread(os.path.join(SRCDIR, 'img/R{:06d}.png'.format(i)))
+        disp = matcher.dense(imL, imR, scale=1)
+        se = np.ones((5,15),np.uint8)
+        disp = cv2.dilate(cv2.dilate(cv2.erode(disp, se), se), se)
+        cv2.imshow("disparity map", disp / np.amax(disp))
+        cv2.waitKey(10)
+
+        #rover.tilt = compute_tilt(imL, imR, lamb=0.1)
+        #print rover.tilt
+        XYZ = reproject_map(disp, rover.Q())
+        #minZ, maxZ = np.amin(XYZ[:,:,2]), np.amax(XYZ[:,:,2])
+        minZ, maxZ = -0.5, 0.3
+        #lab = np.array(100 * (XYZ[:,:,2] - minZ) / (maxZ - minZ), dtype=np.int)
+        lab = np.array(disp, dtype=np.int)
+        lab[XYZ[:,:,2]==0] = 0
+        lab[lab < 10] = 0
+        lab[lab > 90] = 99
+        #print np.unique(lab)
+        lab = color.label2rgb(lab, bg_label=0, colors=common.jet(90)/255., image=imL, alpha=0.6)
+        cv2.imshow('Z', lab)
+        cv2.imwrite('/tmp/frame{:03d}.png'.format(i-541), lab * 255)
+        #cv2.imshow('Z', XYZ[:, :, 2] / np.amax(XYZ[:, :, 2]))
+
+    raw_input()

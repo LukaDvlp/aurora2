@@ -26,7 +26,7 @@ pi = math.pi
 camH = 0.6
 
 # Camera tilt [rad] (initial value)
-tilt = 25.0 / 180.0 * pi
+tilt = 18.0 / 180.0 * pi
 
 # Stereo baseline [m]
 bl = 0.105
@@ -79,6 +79,12 @@ def K():
 
 def D():
     return np.array(distortion)
+
+def Q():
+    return np.array([[1, 0, 0,     -uv0[0]],
+                     [0, 1, 0,     -uv0[1]],
+                     [0, 0, 0,     f],
+                     [0, 0, 1./bl, 0]])
 
 
 
