@@ -168,8 +168,6 @@ if __name__ == '__main__':
     import glob
     from colorcorrect.algorithm import grey_world
 
-    init_module()
-
     SRCDIR = '/Users/kyoheee/FieldData/MarsYard2015/freerun03'
 
     vecT = localization.read_from_file(os.path.join(SRCDIR, 'vo_raw.txt'))
