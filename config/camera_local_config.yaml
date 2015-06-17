@@ -1,0 +1,12 @@
+cameraL:
+    uri: /Users/kyoheee/Documents/MATLAB/JPLTerrain/DATA/ATRVJR_DATA/ATRVJR_BEDROCK01/img/L{:06d}.png
+    K: [0]
+    H: [0]
+    map: [0]
+cameraR:
+    uri: /Users/kyoheee/Documents/MATLAB/JPLTerrain/DATA/ATRVJR_DATA/ATRVJR_BEDROCK01/img/R{:06d}.png
+    K: [0]
+    H: [0]
+    map: [0]
+frame_range: [0, 60]
+
