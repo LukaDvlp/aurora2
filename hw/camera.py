@@ -9,6 +9,7 @@ import threading
 import Queue
 import yaml
 
+import numpy as np
 from skimage import io
 import cv2
 
