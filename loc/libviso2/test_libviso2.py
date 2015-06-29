@@ -12,7 +12,8 @@ import numpy as np
 import cv2
 
 import libviso2 as vo
-
+from aurora.loc import rover
+from aurora.core import core
 
 ## Sample code
 if __name__ == '__main__':
@@ -21,9 +22,9 @@ if __name__ == '__main__':
     imLc = cv2.imread("libviso2/img/I1c.png", 0)
     imRc = cv2.imread("libviso2/img/I2c.png", 0)
 
-    p = np.array([480, 0.5 * 1344, 0.5 * 391, 0.5])
+    rover.setup(core.get_full_path('config/rover_coords.yaml'))
+    vo.setup(rover)
 
-    vo.setup(p)
     print vo.update_stereo(imLp, imRp)
     print vo.update_stereo(imLc, imRc)
     print vo.update_stereo(imLc, imRc)
