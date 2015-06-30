@@ -8,5 +8,5 @@ cameraR:
     f: 487.7632
     uv0: [319.5, 239.5]
     uri_map: lutR.png
-frame_range: [0, 60]
+frame_range: [0, 300]
 

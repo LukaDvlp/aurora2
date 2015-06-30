@@ -47,7 +47,7 @@ def setup(yamlfile):
     cTi = inv(iTc)
     bTc = tfm.translation_matrix([0, rconfig['baseline'] / 2, rconfig['camera_height']])
     cTb = inv(bTc)
-    bTi = bTc * cTi
+    bTi = np.dot(bTc, cTi)
     iTb = inv(bTi)
     rTc = tfm.translation_matrix([0, rconfig['baseline'], 0])
     cTr = inv(rTc)
@@ -90,6 +90,9 @@ if __name__ == '__main__':
 
     print 'cTb = '
     print cTb
+
+    print 'bTi = '
+    print bTi
 
     print 'KL = '
     print KL

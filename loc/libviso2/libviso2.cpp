@@ -19,7 +19,6 @@
 
 boost::shared_ptr<VisualOdometryStereo::parameters> viso_param_;
 boost::shared_ptr<VisualOdometryStereo> viso_;
-cv::Mat wTc_;
 cv::Mat bTi_;
 cv::Mat iTb_;
 
@@ -51,26 +50,22 @@ void update_mono(const cv::Mat &im, cv::Mat &wTc) {
  *  Update pose from stereo images
  *  @param imL Left image
  *  @param imR Right image
- *  @param wTb Transformation matrix from world to current rover base frame
- *  @param bTi Transformation matrix from rover base to left image coordinates (optional)
+ *  @param pTc Transformation matrix from privious to current rover base frame
  */
-void update_stereo(const cv::Mat &imL, const cv::Mat &imR, cv::Mat &wTb) {
+void update_stereo(const cv::Mat &imL, const cv::Mat &imR, cv::Mat &pTc) {
     static int32_t dims[] = {imL.cols, imL.rows, imL.cols};
-    static cv::Mat ppbTpb = cv::Mat::eye(4, 4, CV_64F);
-    if (wTb.cols != 4) wTb = cv::Mat::eye(4, 4, CV_64F);
+    static cv::Mat ppTp = cv::Mat::eye(4, 4, CV_64F);
 
+    // compute motion
     if (viso_->process(imL.data, imR.data, dims)) {
-        // compute motion
         Matrix motion = Matrix::inv(viso_->getMotion());
         cv::Mat piTci(4, 4, CV_64F, &motion.val[0][0]);
-        cv::Mat pbTcb = bTi_ * piTci * iTb_;
-
-        // update global pose
-        wTb *= pbTcb;
-        pbTcb.copyTo(ppbTpb);
+        pTc = bTi_ * piTci * iTb_;
+        pTc.copyTo(ppTp);
     }
     else {
-        wTb *= ppbTpb;
+        // if failed, return previous motion
+        pTc = ppTp;
     }
 }
 
@@ -91,32 +86,31 @@ int main(int argc, char **argv) {
 /*!
  *  Wrapper function for Python-C++ bridging
  */
-PyObject* setup_wrapper(PyObject *rover) {
-    NDArrayConverter cvt;
+void setup_wrapper(PyObject *rover) {
+    static NDArrayConverter cvt;
     cv::Mat K = cvt.toMat(PyObject_GetAttrString(rover, "KL"));
     double baseline = boost::python::extract<double>(PyObject_GetAttrString(rover, "baseline"));
     cv::Mat bTi = cvt.toMat(PyObject_GetAttrString(rover, "bTi"));
     setup(K, baseline, bTi);
 }
 
-PyObject* setup2_wrapper(PyObject *param) {
-    NDArrayConverter cvt;
-    std::cout << cvt.toMat(PyObject_GetAttrString(param, "bTi")) << std::endl;
-}
 
 PyObject* update_stereo_wrapper(PyObject *imL, PyObject *imR) {
-    NDArrayConverter cvt;
+    static NDArrayConverter cvt;
     cv::Mat _imL = cvt.toMat(imL);
     cv::Mat _imR = cvt.toMat(imR);
-    update_stereo(_imL, _imR, wTc_);
-    return cvt.toNDArray(wTc_);
+    cv::Mat pTc;
+    update_stereo(_imL, _imR, pTc);
+    return cvt.toNDArray(pTc);
 }
+
 
 PyObject* update_mono_wrapper(PyObject *im) {
     NDArrayConverter cvt;
     cv::Mat _im = cvt.toMat(im);
-    update_mono(_im, wTc_);
-    return cvt.toNDArray(wTc_);
+    cv::Mat pTc;
+    update_mono(_im, pTc);
+    return cvt.toNDArray(pTc);
 }
 
 
