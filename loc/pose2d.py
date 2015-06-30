@@ -22,6 +22,13 @@ def pose_from_matrix(T):
     return np.array([xyz[0], xyz[1], ypr[0]])
 
 
+def matrix_from_pose(X):
+    '''Return transformation matrix from pose'''
+    T = tfm.euler_matrix(X[2], 0, 0, 'rzyx')
+    T[:2, 3] = X[:2]
+    return T
+
+
 def update(X):
     '''Update pose in 2D space
     X = [dx,dy,dyaw]
