@@ -180,7 +180,7 @@ if __name__ == '__main__':
     
     # mapper instance
     sz = (500, 500)
-    dpm = 50  # dot per meter
+    dpm = 25  # dot per meter
     vizmap = Mapper(sz, dpm, lamb=1)
 
     # rover pose
@@ -203,6 +203,7 @@ if __name__ == '__main__':
         #  mapping
         imLmask = imL
         imLmask[:100, :, :] = 0
+        imLmask[imLg < 50] = 0  # shadow removal
         vizmap.add_image(imLmask, wTc)
         topmap = vizmap.get_map(trajectory=True, grid=True, centered=True)
 
