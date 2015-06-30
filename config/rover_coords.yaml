@@ -1,5 +1,5 @@
 baseline: 0.105  # m
 wheelbase: 0.50  # m
-tilt: 30  # radians
+tilt: 20  # radians
 camera_height: 0.6  # m
 camera_yaml: config/camera_local_config.yaml
