@@ -198,6 +198,7 @@ from __future__ import division, print_function
 import math
 
 import numpy
+import numpy as np
 
 __version__ = '2015.03.13'
 __docformat__ = 'restructuredtext en'
@@ -1904,6 +1905,39 @@ def _import_module(name, package=None, warn=True, prefix='_py_', ignore='_'):
                     warnings.warn("no Python implementation of " + attr)
             globals()[attr] = getattr(module, attr)
         return True
+
+
+
+####### CUSTOM (by Kyohei Otsu) ########
+
+def transformp(pts, T):
+    '''Perform affine transformation
+
+    Args: 
+        pts: 3xN matrix
+        T:   4x4 transformaiton matrix
+    '''
+    assert T.shape[0] >= 3 and T.shape[1] == 4
+
+    N = pts.shape[1]
+    new_pts = np.dot(T[:3, :3], pts) + np.tile(T[:3, 3:], N)
+    return new_pts
+
+
+def projectp(pts, K, T=None):
+    '''Project point onto image plane
+
+    Args:
+        pts: 3xN matrix
+        K  : 3x3 camera matrix
+        T  : 4x4 transformation matrix
+    '''
+    if T is not None:
+        pts = transformp(pts, T)
+    impt = np.dot(K, pts)
+    return np.array([impt[0, :] / impt[2, :], impt[1, :] / impt[2, :]])
+
+#######        END CUSTOM       ########
 
 
 #_import_module('_transformations')
