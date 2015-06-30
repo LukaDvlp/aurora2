@@ -13,31 +13,31 @@ import matplotlib.pyplot as plt
 import cv2
 from skimage import color
 
-from aurora.core import core
-from aurora.loc import libviso2 as vo
 from aurora.loc import rover
 from aurora.loc import pose2d as pose
 from aurora.loc import transformations as tfm
-from aurora.hw import camera
 
 
 class Mapper():
-    def __init__(self, shape, resolution, lamb=1):
+    def __init__(self, shape, dpm, lamb=1):
         '''
             Init Mapper instance
                 size: shape in pixels (height, width)
-                resolution: meters in pixel
+                dpm: pixels in meter
                 lamb: weight to new measurement (0-1)
         '''
         # TODO comment variables
-        self.resolution = resolution
+        self.dpm = dpm
         self.shape = shape  # (height, width)
         self.mosaic = np.zeros((self.shape[1], self.shape[0], 3), dtype=np.uint8)
         self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
+        self.init_grid()
         self.bHi = self.get_homography()
         self.lamb = lamb
         self.center = np.array([s / 2 for s in self.shape[::-1]])  # [u0, v0]
         self.pose = np.append(self.center, [0])  # [u, v, theta]
+
+
 
 
     def add_image(self, image, wTc):
@@ -59,7 +59,7 @@ class Mapper():
         
 
     
-    def get_map(self, trajectory=False, centered=False):
+    def get_map(self, trajectory=False, grid=False, centered=False):
         '''
             Get curremt map
                 trajectory: show rover trajectory
@@ -68,6 +68,8 @@ class Mapper():
         disp = self.mosaic.copy()
         if (trajectory): 
             disp[self.traj > 0] = self.traj[self.traj > 0]
+        if (grid): 
+            disp[self.grid > 0] = self.grid[self.grid > 0]
         if (centered):
             R = cv2.getRotationMatrix2D(tuple(self.pose[:2]), -180 / math.pi * self.pose[2], 1)
             R[0, 2] += self.shape[0] / 2 - self.pose[0]
@@ -96,7 +98,7 @@ class Mapper():
         '''
         dst_yx = self.rect2pts(dst)
         dst_w = np.vstack((dst_yx[::-1,:], np.zeros(4)))
-        dst_pix = self.to_pix(dst_yx)
+        dst_pix = self.meter2pix(dst_yx)
         src_pix = tfm.projectp(dst_w, T=rover.iTb, K=rover.KL)
         return cv2.findHomography(src_pix.T, dst_pix.T)[0]
 
@@ -105,8 +107,8 @@ class Mapper():
         p = pose.pose_from_matrix(wTc)
         cy = math.cos(p[2])
         sy = math.sin(p[2])
-        C = np.array([[ cy, sy, self.to_pix(p[1]) + self.center[0]],
-                      [-sy, cy, self.to_pix(p[0]) + self.center[1]],
+        C = np.array([[ cy, sy, self.meter2pix(p[1]) + self.center[0]],
+                      [-sy, cy, self.meter2pix(p[0]) + self.center[1]],
                       [  0,  0,  1]])
         pos = np.array([C[0, 2], C[1, 2], p[2]])
         return C, pos
@@ -129,6 +131,7 @@ class Mapper():
         old_traj = self.traj
         self.mosaic = np.zeros(self.mosaic.shape, dtype=np.uint8)
         self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
+        self.init_grid()
         if self.pose[0] < w3:     
             self.mosaic[:, -2*w3:] = old_mosaic[:, :2*w3]
             self.traj[:, -2*w3:] = old_traj[:, :2*w3]
@@ -148,14 +151,27 @@ class Mapper():
         return True
 
 
-    def to_pix(self, meter):
-        return meter / self.resolution
+    def init_grid(self):
+        '''Init grid (1m mesh)'''
+        self.grid = np.zeros(self.mosaic.shape, dtype=np.uint8)
+        for i in range(int(self.shape[0] / self.dpm)):
+            row = int(self.meter2pix(i))
+            cv2.line(self.grid, (0, row), (self.shape[1], row), (0, 255, 0), 1)
+        for j in range(int(self.shape[1] / self.dpm)):
+            col = int(self.meter2pix(j))
+            cv2.line(self.grid, (col, 0), (col, self.shape[0]), (0, 255, 0), 1)
+
+
+    def meter2pix(self, meter):
+        return meter * self.dpm
 
 
 ## Sample code
 if __name__ == '__main__':
     from colorcorrect.algorithm import grey_world
+    from aurora.core import core
     from aurora.loc import libviso2 as vo
+    from aurora.hw import camera
 
     # load configure from files
     rover.setup(core.get_full_path('config/rover_coords.yaml'))
@@ -164,8 +180,8 @@ if __name__ == '__main__':
     
     # mapper instance
     sz = (500, 500)
-    res = 0.02  # m/pix
-    vizmap = Mapper(sz, res, lamb=1)
+    dpm = 50  # dot per meter
+    vizmap = Mapper(sz, dpm, lamb=1)
 
     # rover pose
     wTc = np.eye(4)
@@ -186,9 +202,9 @@ if __name__ == '__main__':
 
         #  mapping
         imLmask = imL
-        imLmask[:100, :] = 0
+        imLmask[:100, :, :] = 0
         vizmap.add_image(imLmask, wTc)
-        topmap = vizmap.get_map(trajectory=True, centered=True)
+        topmap = vizmap.get_map(trajectory=True, grid=True, centered=True)
 
         # display
         cv2.imshow('Top view', topmap)
