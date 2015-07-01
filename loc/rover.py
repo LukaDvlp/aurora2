@@ -33,6 +33,8 @@ KR = []  # camera matrix for right camera
 
 baseline = 0  # stereo baseline
 focal_length = 0  # focal length
+width = 0  # rover width
+length = 0  # rover length
 
 
 @decorator.runonce
@@ -65,9 +67,11 @@ def setup(yamlfile):
                    [0, 0, 1]])
 
     # misc.
-    global baseline, focal_length
+    global baseline, focal_length, width, length
     baseline = rconfig['baseline']
     focal_length = cconfig['cameraL']['f']
+    width = rconfig['width']
+    length = rconfig['length']
 
 
 def deg2rad(deg):

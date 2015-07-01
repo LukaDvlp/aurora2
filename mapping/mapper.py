@@ -6,48 +6,64 @@
 """
 
 import math
-import logging
+import yaml
 
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 from skimage import color
 
+from aurora.core import core
+from aurora.core import decorator
 from aurora.loc import rover
-from aurora.loc import pose2d as pose
 from aurora.loc import transformations as tfm
+
+# global mappers
+vizmap = []
+clsmap = []
+hzdmap = []
+
+@decorator.runonce
+def setup(yamlfile):
+    '''load config from yaml'''
+    data = open(yamlfile).read()
+    config = yaml.load(data)
+
+    global vizmap, clsmap, hzdmap
+    vizmap = Mapper(config['vizmap'])
+    clsmap = Mapper(config['clsmap'])
+    hzdmap = Mapper(config['hzdmap'])
+
+    rover.setup(config['rover_yaml'])
 
 
 class Mapper():
-    def __init__(self, shape, dpm, lamb=1):
+    def __init__(self, config):
         '''
             Init Mapper instance
-                size: shape in pixels (height, width)
-                dpm: pixels in meter
-                lamb: weight to new measurement (0-1)
+                config: dictionary that contains 'resolution', 'dpm', 'innovative'
         '''
-        # TODO comment variables
-        self.dpm = dpm
-        self.shape = shape  # (height, width)
-        self.mosaic = np.zeros((self.shape[1], self.shape[0], 3), dtype=np.uint8)
-        self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
-        self.init_grid()
+        self.shape = (config['resolution'][0], config['resolution'][1])  # width, height
+        self.dpm   = config['dpm']  # dots per meter
+        self.lamb  = config['innovative']  # innovation ratio
+        
         self.bHi = self.get_homography()
-        self.lamb = lamb
         self.center = np.array([s / 2 for s in self.shape[::-1]])  # [u0, v0]
         self.pose = np.append(self.center, [0])  # [u, v, theta]
 
+        # images
+        self.mosaic = np.zeros((self.shape[1], self.shape[0], 3), dtype=np.uint8)
+        self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
+        self.init_grid()
 
 
-
-    def add_image(self, image, wTc):
+    def add_image(self, image, pose):
         '''
             Add new image to map
         '''
-        wHb, self.pose = self.compose_homography(wTc)
+        wHb, self.pose = self.compose_homography(pose)
         map_updated = self.move_map()
         if map_updated:
-            wHb, self.pose = self.compose_homography(wTc)
+            wHb, self.pose = self.compose_homography(pose)
         self.wHi = np.dot(wHb, self.bHi)
 
         # update map
@@ -78,6 +94,20 @@ class Mapper():
         return disp
 
 
+    def get_cmap(self, centered=False):
+        cmap = 255 * np.array(np.sum(self.mosaic, axis=2) > 0, dtype=np.uint8)
+        rover_pix = np.array([self.meter2pix(rover.width), self.meter2pix(rover.length)])
+        d = int(np.ceil(np.linalg.norm(rover_pix)))
+        rover_space = np.ones((d, d), dtype=np.uint8)
+        cmap = cv2.dilate(cmap, rover_space)
+        if (centered):
+            R = cv2.getRotationMatrix2D(tuple(self.pose[:2]), -180 / math.pi * self.pose[2], 1)
+            R[0, 2] += self.shape[0] / 2 - self.pose[0]
+            R[1, 2] += self.shape[0] / 2 - self.pose[1]
+            cmap= cv2.warpAffine(cmap, R, self.shape, flags=cv2.INTER_NEAREST)
+        return cmap
+
+
     def get_rover_view(self, trajectory=False):
         '''
             Get rover-view of the map
@@ -87,9 +117,15 @@ class Mapper():
         return disp
 
     
-    def get_pose_pix(self, wTc):
-        C, pose = self.compose_homography(wTc)
+    def get_pose_pix(self, pose):
+        C, pose = self.compose_homography(pose)
         return pose
+
+
+    def get_pose_world(self, pose):
+        return np.array([self.pix2meter(pose[1] - self.center[0]), 
+                         self.pix2meter(pose[0] - self.center[1]), 
+                         pose[2]])
 
 
     def get_homography(self, dst=(-0.5, 0.6, 1., 1.)):
@@ -103,14 +139,13 @@ class Mapper():
         return cv2.findHomography(src_pix.T, dst_pix.T)[0]
 
 
-    def compose_homography(self, wTc):
-        p = pose.pose_from_matrix(wTc)
-        cy = math.cos(p[2])
-        sy = math.sin(p[2])
-        C = np.array([[ cy, sy, self.meter2pix(p[1]) + self.center[0]],
-                      [-sy, cy, self.meter2pix(p[0]) + self.center[1]],
+    def compose_homography(self, pose):
+        cy = math.cos(pose[2])
+        sy = math.sin(pose[2])
+        C = np.array([[ cy, sy, self.meter2pix(pose[1]) + self.center[0]],
+                      [-sy, cy, self.meter2pix(pose[0]) + self.center[1]],
                       [  0,  0,  1]])
-        pos = np.array([C[0, 2], C[1, 2], p[2]])
+        pos = np.array([C[0, 2], C[1, 2], pose[2]])
         return C, pos
 
 
@@ -154,10 +189,10 @@ class Mapper():
     def init_grid(self):
         '''Init grid (1m mesh)'''
         self.grid = np.zeros(self.mosaic.shape, dtype=np.uint8)
-        for i in range(int(self.shape[0] / self.dpm)):
+        for i in range(int(np.floor(self.shape[0] / self.dpm) + 1)):
             row = int(self.meter2pix(i))
             cv2.line(self.grid, (0, row), (self.shape[1], row), (0, 255, 0), 1)
-        for j in range(int(self.shape[1] / self.dpm)):
+        for j in range(int(np.floor(self.shape[1] / self.dpm) + 1)):
             col = int(self.meter2pix(j))
             cv2.line(self.grid, (col, 0), (col, self.shape[0]), (0, 255, 0), 1)
 
@@ -166,8 +201,49 @@ class Mapper():
         return meter * self.dpm
 
 
+    def pix2meter(self, pix):
+        return 1.0 * pix / self.dpm
+
+
 ## Sample code
 if __name__ == '__main__':
+    from aurora.loc import pose2d
+
+    # load configure from files
+    rover.setup(core.get_full_path('config/rover_coords.yaml'))
+    setup(core.get_full_path('config/map_config.yaml'))
+    pose = pose2d.Pose2D()
+
+    # dummy image
+    im = np.zeros((480, 640, 3), dtype=np.uint8)
+    cv2.circle(im, (300, 300), 100, (255, 120, 20), -1)
+    cv2.rectangle(im, (500, 210), (580, 320), (20, 22, 180), -1)
+    cv2.imshow('dummy', im)
+    cv2.waitKey(1)
+
+    # dummy motion
+    m = np.array([0.1, 0, 0.02])
+
+    for i in range(100):
+        p = pose.update(m)
+        vizmap.add_image(im, p)
+
+        # Normal map
+        topmap = vizmap.get_map(trajectory=True, grid=True, centered=True)
+        cv2.imshow('Top view', topmap)
+        cv2.waitKey(1)
+
+        # Cost map
+        cmap = vizmap.get_cmap(centered=True)
+        cv2.imshow('Cost map', cmap)
+        cv2.waitKey(1)
+
+        cv2.waitKey(1000)
+
+
+
+'''
+if __name__ != '__main__':
     from colorcorrect.algorithm import grey_world
     from aurora.core import core
     from aurora.loc import libviso2 as vo
@@ -177,15 +253,9 @@ if __name__ == '__main__':
     rover.setup(core.get_full_path('config/rover_coords.yaml'))
     camera.setup(core.get_full_path('config/camera_local_config.yaml'))
     vo.setup(rover)
+    setup(core.get_full_path('config/map_config.yaml'))
+    pose = pose2d.Pose2D()
     
-    # mapper instance
-    sz = (500, 500)
-    dpm = 25  # dot per meter
-    vizmap = Mapper(sz, dpm, lamb=1)
-
-    # rover pose
-    wTc = np.eye(4)
-
     for i in range(1000):
         # load image
         frame, imL, imR = camera.get_stereo_images()
@@ -198,20 +268,16 @@ if __name__ == '__main__':
         # compute odometry
         pTc = vo.update_stereo(imLg, imRg)
         p = pose.update_from_matrix(pTc)
-        wTc = pose.matrix_from_pose(p)
 
         #  mapping
         imLmask = imL
         imLmask[:100, :, :] = 0
         imLmask[imLg < 50] = 0  # shadow removal
-        vizmap.add_image(imLmask, wTc)
+        vizmap.add_image(imLmask, p)
         topmap = vizmap.get_map(trajectory=True, grid=True, centered=True)
 
         # display
         cv2.imshow('Top view', topmap)
         cv2.waitKey(1)
 
-
-    plt.pause(1)
-    raw_input()  # wait key input
-
+'''
