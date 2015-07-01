@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
     
 import libviso2 as vo
 from aurora.loc import rover
-from aurora.loc import pose2d as pose
+from aurora.loc import pose2d
 from aurora.hw import camera
 from aurora.core import core
 
@@ -26,6 +26,7 @@ if __name__ == '__main__':
     rover.setup(core.get_full_path('config/rover_coords.yaml'))
     camera.setup(core.get_full_path('config/camera_local_config.yaml'))
     vo.setup(rover)
+    pose = pose2d.Pose2D()
 
     # perform odometry
     plt.figure()

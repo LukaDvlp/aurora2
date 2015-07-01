@@ -11,48 +11,47 @@ import numpy as np
 from aurora.loc import transformations as tfm
 
 
-# global pose [x, y, yaw]
-pose = np.zeros(3)
+class Pose2D:
+    def __init__(self):
+        # global pose [x, y, yaw]
+        self.pose = np.zeros(3)
 
 
-def pose_from_matrix(T):
-    '''Returns pose X=[x,y,yaw] from transformation matrix'''
-    ypr = tfm.euler_from_matrix(T, 'rzyx')
-    xyz = T[:3,3]
-    return np.array([xyz[0], xyz[1], ypr[0]])
+    def pose_from_matrix(self, T):
+        '''Returns pose X=[x,y,yaw] from transformation matrix'''
+        ypr = tfm.euler_from_matrix(T, 'rzyx')
+        xyz = T[:3,3]
+        return np.array([xyz[0], xyz[1], ypr[0]])
 
 
-def matrix_from_pose(X):
-    '''Return transformation matrix from pose'''
-    T = tfm.euler_matrix(X[2], 0, 0, 'rzyx')
-    T[:2, 3] = X[:2]
-    return T
+    def matrix_from_pose(self, X):
+        '''Return transformation matrix from pose'''
+        T = tfm.euler_matrix(X[2], 0, 0, 'rzyx')
+        T[:2, 3] = X[:2]
+        return T
 
 
-def update(X):
-    '''Update pose in 2D space
-    X = [dx,dy,dyaw]
-    '''
-    global pose
-    R = np.array([[cos(pose[2]), -sin(pose[2]), 0],
-                  [sin(pose[2]),  cos(pose[2]), 0],
-                  [           0,             0, 1]])
-    pose = pose + np.dot(R, X)
-    return pose
+    def update(self, X):
+        '''Update pose in 2D space
+        X = [dx,dy,dyaw]
+        '''
+        R = np.array([[cos(self.pose[2]), -sin(self.pose[2]), 0],
+                      [sin(self.pose[2]),  cos(self.pose[2]), 0],
+                      [                0,                  0, 1]])
+        self.pose = self.pose + np.dot(R, X)
+        return self.pose
 
 
-def update_from_matrix(T):
-    '''Update pose in 2D space from transformation matrix'''
-    update(pose_from_matrix(T))
-    return pose
+    def update_from_matrix(self, T):
+        '''Update pose in 2D space from transformation matrix'''
+        return self.update(self.pose_from_matrix(T))
 
 
 ## Sample code
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    #T = tfm.euler_matrix(pi/4, pi/3, 0, 'rzyx')
-    #print pose_from_matrix(T)
+    pose = Pose2D()
 
     # generate synthetic motion
     pTc = tfm.euler_matrix(pi/16, pi/3, 0, 'rzyx')
@@ -62,8 +61,9 @@ if __name__ == '__main__':
     # concatenate motion
     pos = np.zeros((0, 3))
     for i in range(50):
-        update_from_matrix(pTc)
-        pos = np.vstack((pos, pose))
+        p = pose.update_from_matrix(pTc)
+        print p
+        pos = np.vstack((pos, p))
 
     # plot
     plt.figure()
