@@ -17,6 +17,15 @@ from aurora.mapping import mapper
 
 
 def compute_waypoints(hzdmap, start, goal):
+    '''Compute waypoints given cost map and start/goal coordinates
+
+    Args:
+        hzdmap: Mapper module that contains hazard information
+        start : current pose in world frame
+        goal  : target pose in world frame
+    Returns:
+        wp    : List of waypoints in world frame
+    '''
     cmap = hzdmap.get_cmap(centered=True)
     start_pix = hzdmap.get_pose_pix(start)
     goal_pix = hzdmap.get_pose_pix(goal)
@@ -77,10 +86,11 @@ if __name__ == '__main__':
     cv2.circle(mapper.hzdmap.mosaic, (300, 300), 5, (0, 0, 255), -1)
 
     # path plannin test
-    start = (0, 0, 0)
+    start = (0, 1, 0)
     goal  = (3, 0, 0)
     print 'Path planning from', start, 'to', goal
     wp = compute_waypoints(mapper.hzdmap, start, goal)
+    print 'Waypoints:\n', wp
 
     # display
     cmap = mapper.hzdmap.get_map(centered=True, grid=True)
