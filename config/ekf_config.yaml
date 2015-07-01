@@ -1,0 +1,7 @@
+# System predict timestep
+dt: 1
+# System noise (diagonal)
+Q: [0.01, 0.001, 0.001, 0.001, 0.001, 0.0001]
+# Measurement noise (diagonal)
+R: [0.01, 0.0, 0.01]
+
