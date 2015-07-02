@@ -7,6 +7,7 @@ Aurora is a library for enabling rover autonomy in unknown environments written 
 
 - Kyohei Otsu <kyon@ac.jaxa.jp>
 - Taiki Mashimo <mashimo.taiki@ac.jaxa.jp>
+- Kan Mayoshi <k_mayoshi@ac.jaxa.jp>
 
 # Modules
 
@@ -17,8 +18,9 @@ Aurora has a modular structure based on functionalities:
 * nongeom. Non-geometric analsys of terrain
 * mapping. Terrain mapping
 * planning. Path planning and command generation
-* viz. Visualization
 * hw. Drivers for hardwares
+* viz. Visualization
+* srv. Server-side APIs
 
 
 # Dependency
