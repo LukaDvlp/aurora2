@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Top-level module of aurora rover controller
 
-@author kyohei otsu <kyon@ac.jaxa.jp>
+@author Kyohei Otsu <kyon@ac.jaxa.jp>
 @date   2015-06-12
 
 Usage:
@@ -10,7 +10,6 @@ Usage:
 
 import threading
 import Queue
-import flask
 
 import numpy as np
 import cv2
@@ -18,16 +17,17 @@ import cv2
 from aurora.core import core
 from aurora.hw import camera
 from aurora.loc import libviso2 as vo
+from aurora.loc import rover
+from aurora.loc import pose2d
+from aurora.mapping import mapper
 
 
 ## Global variables
 
-# Main application
-APP = flask.Flask('viz')
-IPADDR = '127.0.0.1'
-
 # Goals
 GOALS = Queue.Queue()
+
+pose = []
 
 
 ## Functions for image processing
@@ -37,11 +37,12 @@ def setup():
 
     This method should not block.
     '''
+    global pose
+    rover.setup(core.get_full_path('config/rover_coords.yaml'))
     camera.setup(core.get_full_path('config/camera_local_config.yaml'))
-
-    vo_param = np.array([487.76, 320., 240, 0.105])
-    vo.setup(vo_param)
-
+    vo.setup(rover)
+    mapper.setup(core.get_full_path('config/map_config.yaml'))
+    pose = pose2d.Pose2D()
 
 def loop():
     '''Main loop for processing new images'''
@@ -53,11 +54,15 @@ def loop():
         imLg = cv2.cvtColor(imL, cv2.COLOR_BGR2GRAY)
         imRg = cv2.cvtColor(imR, cv2.COLOR_BGR2GRAY)
 
-        # update pose
-        wTc = vo.update_stereo(imLg, imRg)
-        print frame, wTc[:3, 3].T
+        # compute odometry
+        pTc = vo.update_stereo(imLg, imRg)
+        p = pose.update_from_matrix(pTc)
 
         # update map
+        imLmask = imL
+        imLmask[:100, :, :] = 0
+        imLmask[imLg < 50] = 0  # shadow removal
+        mapper.vizmap.add_image(imLmask, p)
 
         # fetch new goal from queue
         if goal is None:
@@ -74,6 +79,11 @@ def loop():
             # send commands
             pass
 
+        # display
+        topmap = mapper.vizmap.get_map(trajectory=True, grid=True, centered=True)
+        cv2.imshow('Top view', topmap)
+        cv2.waitKey(1)
+
 
 def set_new_goal(new_goal, clear_all=False):
     '''Set new goal to queue
@@ -87,28 +97,7 @@ def set_new_goal(new_goal, clear_all=False):
     GOALS.put(new_goal)
 
 
-## Flask URI binding
-
-@APP.route('/')
-def uri_root():
-    '''Render main page'''
-    return flask.render_template('top.html')
-
-
-@APP.route('/set/goal', methods=['POST'])
-def uri_set_goal():
-    '''Set goal from web UI
-
-    The goal should be specified in global coordinates
-    '''
-    goal = float(request.form['goalX']), float(request.form['goalY'])
-    set_new_goal(goal, clear_all=True)
-
-
 if __name__ == '__main__':
     setup()
-    thread = threading.Thread(target=loop)
-    thread.setDaemon(True)
-    thread.start()
-    APP.run(host=IPADDR, debug=False)
+    loop()
 
