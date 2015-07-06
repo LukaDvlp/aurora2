@@ -20,8 +20,8 @@ from aurora.srv.resources import stereo
 from aurora.srv.resources import maps
 from aurora.srv.resources import states
 
-#from aurora.srv.resources import image
-#from aurora.srv.resources import float_array
+from aurora.srv.resources import image
+from aurora.srv.resources import float_array
 
 
 ## Flask Application
@@ -47,8 +47,8 @@ register_resource(maps.ClassMap)
 register_resource(states.PoseVO)
 
 # sample
-#register_resource(image.Image)
-#register_resource(float_array.FloatArray)
+register_resource(image.Image)
+register_resource(float_array.FloatArray)
 
 
 ## Main scripts
