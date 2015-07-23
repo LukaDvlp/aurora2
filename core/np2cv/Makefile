@@ -1,10 +1,10 @@
 CXX         = g++
-CXXFLAGS    = -Wall -arch x86_64
+CXXFLAGS    = -Wall -fPIC
 OPENCV_INCS = $$(pkg-config --cflags opencv)
 OPENCV_LIBS = $$(pkg-config --libs opencv)
 BOOST_INCS  = 
 BOOST_LIBS  = -lboost_python
-PYTHON_INCS = $$(pkg-config --cflags python) -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include
+PYTHON_INCS = $$(pkg-config --cflags python) -I/usr/local/lib/python2.7/dist-packages/numpy/core/include
 PYTHON_LIBS = $$(pkg-config --libs python)
 INCLUDES    = $(OPENCV_INCS) $(BOOST_INCS) $(PYTHON_INCS)
 LIBS        = $(OPENCV_LIBS) $(BOOST_LIBS) $(PYTHON_LIBS)

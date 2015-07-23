@@ -1,14 +1,14 @@
 # Each map must have entries for 'resolution', 'dpm', and 'innovative'
 vizmap:
-    resolution: [500, 500]  # pixels
+    resolution: [400, 400]  # pixels
     dpm: 50  # dots per meter
     innovative: 1  # [0--1]
 clsmap:
-    resolution: [500, 500]  # pixels
+    resolution: [400, 400]  # pixels
     dpm: 50  # dots per meter
     innovative: 0.6  # [0--1]
 hzdmap:
-    resolution: [500, 500]  # pixels
+    resolution: [400, 400]  # pixels
     dpm: 50  # dots per meter
     innovative: 0.6  # [0--1]
 rover_yaml: config/rover_coords.yaml

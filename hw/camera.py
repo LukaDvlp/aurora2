@@ -22,6 +22,10 @@ FRAME = -1
 # Config
 CONFIG = {}
 
+# rectification homography matrices
+HL = None
+HR = None
+
 
 @decorator.runonce
 def setup(yamlfile):
@@ -31,6 +35,10 @@ def setup(yamlfile):
     CONFIG = yaml.load(data)
     if CONFIG.has_key('frame_range'):
         FRAME = CONFIG['frame_range'][0] - 1
+
+    global HL, HR
+    HL = np.array(CONFIG['cameraL']['H'], dtype=np.double)
+    HR = np.array(CONFIG['cameraR']['H'], dtype=np.double)
 
 
 def check_range():
@@ -85,6 +93,7 @@ def get_mono_image():
         imL = qimL.get_nowait()
     except:
         imL = None
+        print 'ERROR: Image read '
 
     return FRAME, imL
 
@@ -124,12 +133,23 @@ def get_stereo_images():
     return FRAME, imL, imR
 
 
+def rectify_stereo(imL, imR):
+    ''' adjust epipolar lines with homography matrices '''
+    h, w = imL.shape[:2]
+    rimL = cv2.warpPerspective(imL, HL, (w, h))
+    rimR = cv2.warpPerspective(imR, HR, (w, h))
+    return rimL, rimR
+
+
+
 ## Sample code
 if __name__ == '__main__':
-    setup(core.get_full_path('config/camera_config.yaml'))
+    setup(core.get_full_path('config/camera_local_config.yaml'))
 
     frame, imL = get_mono_image()
     frame, imL, imR = get_stereo_images()
+
+    imL, imR = rectify_stereo(imL, imR)
 
     cv2.imshow('image', imL)
     cv2.waitKey(0)

@@ -25,9 +25,29 @@
 void disparity(const cv::Mat &imL, cv::Mat &imR, cv::Mat &imD) {
 
     //cv::StereoSGBM sgbm(1, 16*2, 3, 200, 255, 1, 0, 0, 0, 0, true);
-    cv::StereoSGBM sgbm(1, 16*5, 3, 200, 255, 1, 0, 0, 150, 1, true);
-    sgbm(imL, imR, imD);
+    int w = imL.cols;
+    int h = imL.rows;
+    cv::Mat imL_(h/2, w/2, CV_8UC1);
+    cv::Mat imR_(h/2, w/2, CV_8UC1);
+    cv::Mat imD_;
+    cv::resize(imL, imL_, imL_.size());
+    cv::resize(imR, imR_, imR_.size());
 
+    int max_disp = 16 * 3;
+    int sad_win = 5;
+    double contrast_threshold = 0.8;
+    double uniqueness_threshold = 30;
+    double distance_threshold = 1;
+
+    int P1 = 8  * sad_win * sad_win;
+    int P2 = 32 * sad_win * sad_win;
+    int prefiltercap = 63. * contrast_threshold;
+    
+    cv::StereoSGBM sgbm(0, max_disp, sad_win, P1, P2, distance_threshold, prefiltercap, uniqueness_threshold, 0, 0, false);
+    sgbm(imL_, imR_, imD_);
+
+    imD.create(h, w, imD_.type());
+    cv::resize(imD_ * 2, imD, imD.size());
 }
 
 /*!

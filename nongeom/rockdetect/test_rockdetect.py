@@ -7,6 +7,8 @@
 Usage:
     $ python test_rockdetect.py
 """
+import sys
+sys.settrace
 
 import numpy as np
 import cv2

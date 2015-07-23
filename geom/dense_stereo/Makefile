@@ -26,7 +26,7 @@ test: $(TARGET).out
 lib: $(TARGET).so
 
 install:
-	cd .. && ln -s $(TARGET)/$(TARGET).so
+	if [ ! -f ../$(TARGET).so ]; then cd .. && ln -s $(TARGET)/$(TARGET).so; fi
 
 .PHONY: clean
 clean: 
@@ -38,13 +38,13 @@ $(TARGET).out: $(TARGET).cpp
 	cd $(NP2CV_DIR) && make
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $(TARGET).cpp -DUNITTEST
 	$(CXX) $(TARGET).o $(LIBS) -o $@
-	install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
+	#install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
 
 $(TARGET).so: $(TARGET).cpp
 	cd $(NP2CV_DIR) && make
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -fPIC -c $(TARGET).cpp
 	$(CXX) -shared $(TARGET).o $(LIBS) -o $@
-	install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
+	#install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
 
 ################################################################################
 

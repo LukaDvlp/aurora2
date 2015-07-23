@@ -1,12 +1,14 @@
 cameraL:
-    uri: /Users/kyoheee/Documents/MATLAB/JPLTerrain/DATA/ATRVJR_DATA/ATRVJR_BEDROCK01/img/L{:06d}.png
+    uri: /home/kubotalab/FieldData/MarsYard2015/ATRVJR_BEDROCK01/img/L{:06d}.png
     f: 487.7632
     uv0: [319.5, 239.5]
     uri_map: lutL.png
+    H: [[0.9856, 0.0183, 10.4884], [-0.0290, 0.9994, 9.3139], [-0.0000, 0.0000, 1.0137]]
 cameraR:
-    uri: /Users/kyoheee/Documents/MATLAB/JPLTerrain/DATA/ATRVJR_DATA/ATRVJR_BEDROCK01/img/R{:06d}.png
+    uri: /home/kubotalab/FieldData/MarsYard2015/ATRVJR_BEDROCK01/img/R{:06d}.png
     f: 487.7632
     uv0: [319.5, 239.5]
     uri_map: lutR.png
+    H: [[0.9856, -0.0133, 11.7438], [-0.0290, 0.9957, 13.7910], [-0.0000, -0.0000, 1.0173]]
 frame_range: [0, 300]
 

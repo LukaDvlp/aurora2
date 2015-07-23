@@ -56,7 +56,7 @@ public:
       nms_n                  = 3;
       nms_tau                = 50;
       match_binsize          = 50;
-      match_radius           = 300;
+      match_radius           = 350;
       match_disp_tolerance   = 2;
       outlier_disp_tolerance = 5;
       outlier_flow_tolerance = 5;

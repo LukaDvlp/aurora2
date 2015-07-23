@@ -47,7 +47,7 @@ def setup(yamlfile):
     global cTi, iTc, bTc, cTb, bTi, iTb, cTr, rTc
     iTc = tfm.euler_matrix(pi / 2 + deg2rad(rconfig['tilt']), 0, pi / 2, 'rxyz')
     cTi = inv(iTc)
-    bTc = tfm.translation_matrix([0, rconfig['baseline'] / 2, rconfig['camera_height']])
+    bTc = tfm.translation_matrix([0.20, rconfig['baseline'] / 2, rconfig['camera_height']])
     cTb = inv(bTc)
     bTi = np.dot(bTc, cTi)
     iTb = inv(bTi)

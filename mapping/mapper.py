@@ -47,7 +47,8 @@ class Mapper():
         self.lamb  = config['innovative']  # innovation ratio
         
         self.bHi = self.get_homography()
-        self.center = np.array([s / 2 for s in self.shape[::-1]])  # [u0, v0]
+        self.center0 = np.array([s / 2 for s in self.shape[::-1]])  # [u0, v0]
+        self.center  = np.array([s / 2 for s in self.shape[::-1]])  # [u0, v0]
         self.pose = np.append(self.center, [0])  # [u, v, theta]
 
         # images
@@ -98,7 +99,8 @@ class Mapper():
         cmap = 255 * np.array(np.sum(self.mosaic, axis=2) > 0, dtype=np.uint8)
         rover_pix = np.array([self.meter2pix(rover.width), self.meter2pix(rover.length)])
         d = int(np.ceil(np.linalg.norm(rover_pix)))
-        rover_space = np.ones((d, d), dtype=np.uint8)
+        rover_space = np.zeros((d, d), dtype=np.uint8)
+        cv2.circle(rover_space, (d/2, d/2), d/2, 1, -1)
         cmap = cv2.dilate(cmap, rover_space)
         if (centered):
             R = cv2.getRotationMatrix2D(tuple(self.pose[:2]), -180 / math.pi * self.pose[2], 1)
@@ -118,15 +120,33 @@ class Mapper():
 
     
     def get_pose_pix(self, pose):
-        C, pose = self.compose_homography(pose)
-        return pose
+        '''
+            Return pose in pixels from rover coordinates
+        '''
+        return np.array([self.meter2pix(pose[1]) + self.center0[0],
+                        self.meter2pix(pose[0]) + self.center0[1],
+                        pose[2]])
+    
+
+    def get_pose_meter(self, pose):
+        '''
+            Return pose in meters 
+        '''
+        return np.array([self.pix2meter(pose[1] - self.center0[0]), 
+                         self.pix2meter(pose[0] - self.center0[1]), 
+                         pose[2]])
 
 
-    def get_pose_world(self, pose):
+    def get_world_pose_meter(self, pose):
+        '''
+            Return world-coordinate pose in meters 
+            TODO:
+        '''
         return np.array([self.pix2meter(pose[1] - self.center[0]), 
                          self.pix2meter(pose[0] - self.center[1]), 
                          pose[2]])
 
+    
 
     def get_homography(self, dst=(-0.5, 0.6, 1., 1.)):
         '''
@@ -183,6 +203,7 @@ class Mapper():
             self.mosaic[:2*h3, :] = old_mosaic[-2*h3:, :]
             self.traj[:2*h3, :] = old_traj[-2*h3:, :]
             self.center[1] -= h3
+        print 'DEBUG(mapper): map shifted'
         return True
 
 

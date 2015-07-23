@@ -1,6 +1,6 @@
 ################################################################################
 CXX         = g++
-CXXFLAGS    = -Wall -Wno-unused -msse3
+CXXFLAGS    = -Wall -Wno-unused -msse3 -fPIC
 
 VISO2_DIR   = $(shell pwd)
 INCLUDES    = -I$(VISO2_DIR)/src -I/usr/local/include
@@ -17,7 +17,7 @@ all: lib
 lib: $(TARGET)_base.so
 
 install:
-	cd .. && ln -s $(TARGET)/$(TARGET)_base.so
+	if [ ! -f ../$(TARGET)_base.so ]; then cd .. && ln -s $(TARGET)/$(TARGET)_base.so; fi
 
 .PHONY: clean
 clean: 

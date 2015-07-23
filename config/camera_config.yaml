@@ -1,12 +1,18 @@
 cameraL:
-    uri: http://www.vetprofessionals.com/catprofessional/images/home-cat.jpg
-    K: [0]
-    H: [0]
+    uri: http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=640x480
+    f: 225.0
+    uv0: [319.5, 239.5]
+    H: [[0.993467441784305,  0.0294298365701790,  -4.00257864634767],
+        [-0.0341713781625639,    0.999417211021792,   11.0529315552742],
+        [-1.90450386366899e-05,  -5.64177899523172e-07,   1.00620163162904]]
     map: [0]
 cameraR:
-    uri: http://www.vetprofessionals.com/catprofessional/images/home-cat.jpg
-    K: [0]
-    H: [0]
+    uri: http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=640x480
+    f: 225.0
+    uv0: [319.5, 239.5]
+    H: [[0.993467441784305,  0.0961708287021541,  -20.6498682723800],
+        [-0.0341713781625639, 1.04822147606535,    -11.4415243364725],
+        [-1.90450386366899e-05,   0.000207800649680842,    0.955204623518315]]
     map: [0]
-frame_range: [0, 10]
+#frame_range: [0, 10]
 
