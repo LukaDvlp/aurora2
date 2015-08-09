@@ -72,7 +72,7 @@ class Mapper():
         self.mosaic[new_frame > 0] += self.lamb * (new_frame[new_frame > 0] - self.mosaic[new_frame > 0])
 
         # add trajectory point
-        cv2.circle(self.traj, tuple(int(x) for x in self.pose[:2]), 1, (0, 0, 255), -1)
+        cv2.circle(self.traj, tuple(int(x) for x in self.pose[:2]), 2, (255, 0, 0), -1)
         
 
     

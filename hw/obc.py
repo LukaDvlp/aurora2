@@ -81,7 +81,9 @@ def set_steer_angle(angle):
     '''
     global steer_angle 
     cmd_list = []
-    cmd_list.append('s{:.2f}'.format(angle))
+    if abs(angle < 0.1): angle = 0
+    #cmd_list.append('s{:.2f}'.format(angle))
+    cmd_list.append('u{:.2f}'.format(angle))
     timeout = 0
     if abs(steer_angle - angle) > 15:
         timeout = 2

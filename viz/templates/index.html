@@ -58,7 +58,7 @@
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-header">Rover Controller
-                    <small>v0.2</small>
+                    <small>v0.31</small>
                 </h1>
             </div>
         </div>
@@ -67,19 +67,28 @@
         <!-- Portfolio Item Row -->
         <div class="row">
 
-            <div class="col-md-7">
+            <div class="col-md-5">
                 <!-- main view -->
                 <div class="out_wrapper">
                     <div class="in_wrapper">
                         <img id="view_terrain" class="covered"></img>
                         <img id="view_class" class="covered"></img>
-                        <img id="view_scale" class="covered" src="{{ url_for('static', filename='img/scale02.png') }}"></img>
-                        <canvas id="canvas" class="covered" width="500px" height="500px" style="border: solid 1px"></canvas>
+                        <!--<img id="view_scale" class="covered" src="{{ url_for('static', filename='img/scale02.png') }}"></img>-->
+                        <canvas id="canvas" class="covered" width="400px" height="400px" style="border: solid 1px"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-5">
+            <div class="col-md-4">
+                <!-- main view -->
+                <div class="out_wrapper">
+                    <div class="in_wrapper">
+                        <img id="view_left" class="covered"></img>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
                 <!-- various alerts -->
                 <div id="alert_comm" class="alert alert-danger" role="alert" style="display: none;">ERROR! Communication not established</div>
                 <div id="alert_path" class="alert alert-warning" role="alert" style="display: none;">WARNING! Path not found</div>
@@ -89,8 +98,8 @@
                     <strong>Drive Mode</strong>
                     <div>
                         <ul class="nav nav-tabs" role="tablist" id="drive_mode">
-                            <li role="presentation" class="active"><a href="#" onclick="setDriveMode($(this))">Manual</a></li>
-                            <li role="presentation" class=""><a href="#" onclick="setDriveMode($(this))">Autonav</a></li>
+                            <li role="presentation" ><a href="#" onclick="setDriveMode($(this))">Manual</a></li>
+                            <li role="presentation" class="active"><a href="#" onclick="setDriveMode($(this))">Autonav</a></li>
                         </ul>
                     </div>
 
@@ -112,8 +121,8 @@
                             <span class="input-group-addon" id="sizing-addon2">Y</span>
                             <input id="goalY" type="text" class="form-control" placeholder="Left" aria-describedby="sizing-addon2">
                         </div>
-                        <button type="button" class="btn btn-default" onclick="makePath();">MakePath</button>
-                        <button type="button" class="btn btn-default">Execute</button>
+                        <button type="button" class="btn btn-default" onclick="sendGoal();">SetGoal</button>
+                        <!-- <button type="button" class="btn btn-default">Execute</button> -->
                     </div>
 
                     <div id="notification"></div>
@@ -125,10 +134,10 @@
                 <br style="clear:both"/>
 
                 <div class="control_pane">
-                    <strong>Viewer Options</strong>
+                    <strong>Viewer Options (Not implemented)</strong>
                     <table id="view_options">
                         <tr>
-                            <td><del>Zoom</del></td>
+                            <td>Zoom</td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="aria">
                                     <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-zoom-in"></span></button>
@@ -155,6 +164,17 @@
                             </td>
                         </tr>
                     </table>
+                </div>
+
+                <br style="clear:both"/>
+
+                <div class="control_pane">
+                    <strong>Info</strong>
+                    <div>Camera update: every 5 secs</div>
+                    <div>Map update: every 5 secs</div>
+                    <div>Planning: every 5 secs</div>
+                    <div>Localization: every 1 sec</div>
+                    <div>Hazard detection: every 1 sec</div>
                 </div>
             </div>
 
@@ -216,13 +236,15 @@ function updateScreen() {
         $("#alert_comm").show();
         setTimeout(updateScreen, 1000);
     }
-    view_terrain.src = "{{ url_for('static', filename='data/tmap.png') }}?" + (new Date()).getTime();
+    view_terrain.src = "{{ url_for('static', filename='img/_images_cost_map.png') }}?" + (new Date()).getTime();
+    view_left.src = "{{ url_for('static', filename='img/_images_left.png') }}?" + (new Date()).getTime();
 
     var view_class = new Image();
-    view_class.src = "{{ url_for('static', filename='data/cmap.png') }}?" + (new Date()).getTime();
+    view_class.src = "{{ url_for('static', filename='img/_images_cost_map.png') }}?" + (new Date()).getTime();
     view_class.onload = function() {
         $("#view_class").attr("src", this.src);
     }
+
 }
 
 function clearCanvas() {
@@ -271,6 +293,16 @@ function setGoal() {
         mousedown = false;
         _setGoalToInput(e);
     }
+}
+
+function sendGoal() {
+    $.post('/send_goal', {
+        startU: y2u(0),
+        startV: x2v(0),
+        goalU: y2u($("#goalY").val()),
+        goalV: x2v($("#goalX").val()),
+    }).done(function() {
+    });
 }
 
 function makePath() {

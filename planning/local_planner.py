@@ -30,7 +30,7 @@ def compute_waypoints(hzdmap, start, goal):
     start_pix = hzdmap.get_pose_pix(start)
     goal_pix = hzdmap.get_pose_pix(goal)
 
-    cv2.imshow('cmap', cv2.flip(cv2.flip(cmap, 1), 0))
+    #cv2.imshow('cmap', cv2.flip(cv2.flip(cmap, 1), 0))
 
     # scaling for efficiency. adjust scale value if needed
     scale = 0.1
@@ -60,6 +60,7 @@ def compute_waypoints(hzdmap, start, goal):
             if (np.linalg.norm(p) > 0.2):
                 wp = np.vstack((wp, p))
 
+    '''
     cmap = cv2.resize(cmap, (int(cmap.shape[1] / scale), int(cmap.shape[0] / scale)))
     for i in range(wp.shape[0]):
         p = mapper.hzdmap.get_pose_pix(wp[i])
@@ -70,6 +71,7 @@ def compute_waypoints(hzdmap, start, goal):
 
     cv2.imshow('cmap', cv2.flip(cv2.flip(cmap, 1), 0))
     cv2.waitKey(1)
+    '''
     return wp
 
 

@@ -13,6 +13,7 @@ Usage:
 
 from flask import Flask
 from flask_restful import Api
+from requests import put, get
 
 from aurora.srv.resources import imu
 from aurora.srv.resources import records
@@ -53,5 +54,5 @@ register_resource(float_array.FloatArray)
 
 ## Main scripts
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='192.168.201.10')
 

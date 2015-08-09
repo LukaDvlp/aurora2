@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 """Basic functionality
 
-@author kyohei otsu <kyon@ac.jaxa.jp>
+@author Kyohei Otsu <kyon@ac.jaxa.jp>
 @date   2015-06-12
 """
 
 import os
 import aurora
+import time
+
+import numpy as np
 
 
 def get_pkg_path():

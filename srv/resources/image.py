@@ -8,6 +8,7 @@
 from flask import send_file
 from flask_restful import Resource, reqparse, abort
 from aurora.srv.resources import records
+from aurora.core import core
 
 
 ## Argument parser
@@ -29,7 +30,7 @@ class Image(Resource):
         args = parser.parse_args()
         records.RECORDS[self.uri] = {
                 'timestamp': float(args['timestamp']),
-                'data':      '/tmp/{}.png'.format(self.uri.replace('/', '_')),
+                'data':      core.get_full_path('{}.png'.format(self.uri.replace('/', '_'))),
                 }
         f = open(records.RECORDS[self.uri]['data'], 'w')
         f.write(args['data'].decode('base64'))
