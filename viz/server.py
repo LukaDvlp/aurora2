@@ -21,5 +21,6 @@ def send_goal():
 
 if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('192.168.201.10', 5557))
-    app.run(debug=True, host='192.168.201.10')
+    #sock.connect(('192.168.201.10', 5557))
+    app.run(debug=True)
+    #app.run(debug=True, host='192.168.201.10')
