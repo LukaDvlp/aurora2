@@ -60,7 +60,7 @@
         <div class="row">
             <div id="column-head" class="col-lg-12">
                 <h1 class="page-header">Rover Controller
-                    <small>v1.01</small>
+                    <small>v1.02</small>
                 </h1>
             </div>
         </div> 
@@ -69,14 +69,15 @@
 
             <div id="column-map" class="col-lg-5">
                 <div id="map-container">
-                    <canvas id="canvas" style="background: url(../static/img/_images_cost_map.png)"></canvas>
+                    <img id="map-snapshot" class="covered"/>
+                    <canvas id="canvas" class="covered"></canvas>
                     <img src="../static/img/compass.png" class="covered" style="transform: rotate(10deg); margin: 10px 30px;"/>
                 </div>
             </div>
 
             <div id="column-camera" class="col-lg-4">
                 <div id="camera-container">
-                    <img id="camera-snapshot" src="../static/img/_images_left.png"></img>
+                    <img id="camera-snapshot"></img>
                 </div>
 
                 <!-- Inclinometer -->
@@ -86,15 +87,15 @@
                         <div class="col-lg-1"></div>
                         <div class="col-lg-5">
                             <span>Pitch</span>
-                            <span id="global-position-north" class="lead">1.3</span>
+                            <span id="global-pose-pitch" class="lead">1.3</span>
                             <span>deg</span>
-                            <img src="../static/img/rover_pitch.png" class="" style="transform: rotate(10deg);"/>
+                            <img id="img-pitch" src="../static/img/rover_pitch.png" class=""/>
                         </div>
                         <div class="col-lg-5">
                             <span>Roll</span>
-                            <span id="global-position-north" class="lead">1.3</span>
+                            <span id="global-pose-roll" class="lead">1.3</span>
                             <span>deg</span>
-                            <img src="../static/img/rover_roll.png" class="" style="transform: rotate(10deg);"/>
+                            <img id="img-roll" src="../static/img/rover_roll.png" class=""/>
                         </div>
                         <div class="col-lg-1"></div>
                     </div>
@@ -109,8 +110,8 @@
                     <div id="alert-path" class="alert alert-warning" role="alert" style="display: none;">WARNING! Path not found</div>
                 </div>
 
-                <!-- Status -->
-                <div id="drive-selector" title="Shows current rover state">
+                <!-- Inner Status -->
+                <div id="status-pane" title="Shows current rover state">
                     <div class="sidebar-title"> Status </div>
                     <div class="sidebar-item">
                         <div>
@@ -136,6 +137,28 @@
                     </div>
                 </div>
 
+                <!-- Status -->
+                <div id="inner-status-pane" title="Shows current rover state">
+                    <div class="sidebar-title"> Status </div>
+                    <div class="sidebar-item">
+                        <div>
+                            <span>COM Battery</span>
+                            <span id="state-com-busv" class="lead">80</span>
+                            <span>V</span>
+                        </div>
+                        <div>
+                            <span>MOB Battery</span>
+                            <span id="state-mob-busv" class="lead">80</span>
+                            <span>V</span>
+                        </div>
+                        <div>
+                            <span>Power Consumption</span>
+                            <span id="state-power" class="lead">20.8</span>
+                            <span>W</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Next Waypoint -->
                 <div id="map-mode-selector" title="Select map display mode">
                     <div class="sidebar-title"> Next Waypoint </div>
@@ -143,11 +166,11 @@
                         <form class="form-inline">
                             <div class="form-group">
                                 <label for="exampleInputName2">X</label>
-                                <input type="number" class="form-control" id="goalX" placeholder="Forward" max="5" min="-5" size="25" step="0.01">
+                                <input type="number" class="form-control" id="goalX" placeholder="^" max="5" min="-5" size="25" step="0.01">
                             </div>
                             <div class="form-group">
                                 <label for="exampleInputEmail2">Y</label>
-                                <input type="number" class="form-control" id="goalY" placeholder="Left" max="5" min="-5" size="25" step="0.01">
+                                <input type="number" class="form-control" id="goalY" placeholder="<" max="5" min="-5" size="25" step="0.01">
                             </div>
                             <button type="submit" class="btn btn-default">Set</button>
                             <button type="submit" class="btn btn-default">Delete</button>
@@ -156,26 +179,13 @@
                 </div>
 
                 <!-- Autonomous Drive -->
-                <div id="drive-selector" title="Toggle autonomous drive mode">
+                <div id="drive-selector-pane" title="Toggle autonomous drive mode">
                     <div class="sidebar-title"> Autonomous Drive </div>
                     <div class="sidebar-item">
-                        <form class="form-inline">
-                            <button type="submit" class="btn btn-default">Execute</button>
-                            <button type="submit" class="btn btn-default">Stop</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Path Upload -->
-                <div id="drive-selector" title="Upload waypoints information as a KML file">
-                    <div class="sidebar-title"> Path Upload (kml)</div>
-                    <div class="sidebar-item">
-                        <form class="form-inline">
-                            <div class="form-group">
-                                <input type="file" id="exampleInputFile">
-                            </div>
-                            <button type="submit" class="btn btn-default btn-xs">Upload</button>
-                        </form>
+                        <div id="drive-selector" class="btn-group" data-toggle="buttons">
+                            <label class="btn btn-default"> <input type="radio" name="auto-drive" value="1"> ON </label>
+                            <label class="btn btn-default active"> <input type="radio" name="auto-drive" value="0"> OFF </label>
+                        </div>
                     </div>
                 </div>
 
@@ -208,6 +218,19 @@
                                 <input type="radio" name="map-mode" value="ELEVATION" disabled> <strike>Elevation</strike>
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Path Upload -->
+                <div id="drive-selector" title="Upload waypoints information as a KML file">
+                    <div class="sidebar-title"> Path Upload (kml)</div>
+                    <div class="sidebar-item">
+                        <form class="form-inline">
+                            <div class="form-group">
+                                <input type="file" id="exampleInputFile">
+                            </div>
+                            <button type="submit" class="btn btn-default btn-xs">Upload</button>
+                        </form>
                     </div>
                 </div>
 

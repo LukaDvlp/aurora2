@@ -1,16 +1,129 @@
+//!
+// Coordinate systems
+//
 resolution = 0.02;  // meter/pix
 width  = $("#canvas").width();  // pix
 height = $("#canvas").height();  // pix
 
+function pix2world(pix) { return pix * resolution; }
+function world2pix(meter) { return meter / resolution; }
+
+function x2v(x) { return height / 2 - world2pix(x); }
+function y2u(y) { return width / 2 - world2pix(y); }
+function v2x(v) { return pix2world(height / 2 - v); }
+function u2y(u) { return pix2world(width / 2 - u); }
+
+
+//!
+// Main loop
+//
+
+var map_mode = "VISUAL";
+var drive_mode = 0;
+
 function domReady() {
     // canvas setting
     ctx = $("#canvas")[0].getContext("2d");
-    updateScreen();
-    setGoal();
+    //updateScreen();
+    //setGoal();
 
-    setDriveMode($("#drive_mode li").first().children());
+    //setDriveMode($("#drive_mode li").first().children());
+    //
+    //
+    //
+
+    refleshImages(1);
+    refleshMeasurements(2);
+
+    $("[name=map-mode]").change(function() {
+        map_mode = $(this).val();
+    });
+
+    $("[name=auto-drive]").change(function() {
+        drive_mode = $(this).val();
+    });
+}
+
+function refleshImages(rate) {
+    switch (map_mode) {
+        case "VISUAL":
+            $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_visual_map.png?" + Math.random());
+            break;
+        case "HAZARD":
+            $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_hazard_map.png?" + Math.random());
+            break;
+    }
+    $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
+    setTimeout(function() {
+        refleshImages(rate);
+    }, 1000.0 / rate);
+}
+
+function refleshMeasurements(rate) {
+    getResource('sensor/imu/roll', function(arg) { 
+        var obj = $("#global-pose-roll");
+        obj.text(arg); 
+        obj.css("color", (Math.abs(parseFloat(arg)) > 20 ? "red": "black"));
+
+        $("#img-roll").css("transform", "rotate(" + Math.round(arg) + "deg)"); 
+    });
+
+    getResource('sensor/imu/pitch', function(arg) { 
+        var obj = $("#global-pose-pitch");
+        obj.text(arg); 
+        obj.css("color", (Math.abs(parseFloat(arg)) > 20 ? "red": "black"));
+        $("#img-pitch").css("transform", "rotate(" + Math.round(arg) + "deg)"); 
+    });
+
+    getResource('sensor/bus/com-busv', function(arg) { 
+        var obj = $("#state-com-busv");
+        obj.text(arg); 
+        obj.css("color", (parseFloat(arg) < 28 ? "red": "black"));
+    });
+
+    getResource('sensor/bus/mob-busv', function(arg) { 
+        var obj = $("#state-mob-busv");
+        obj.text(arg); 
+        obj.css("color", (parseFloat(arg) < 28 ? "red": "black"));
+    });
+
+    setTimeout(function() {
+        refleshMeasurements(rate);
+    }, 1000.0 / rate);
+}
+
+//!
+// Visualization utility
+//
+
+function selectMapMode(mode) {
+    switch (mode) {
+        case "VISUAL":
+            break;
+        case "HAZARD":
+            break;
+        case "ELEVATION":
+            break;
+    }
+
+}
 
 
+//!
+// Network utility
+//
+
+function getResource(resource, callback) {
+    $.ajax({
+        type: "GET",
+        url: resource,
+        success: function(result, status, xhr) {
+            //console.log(result);
+            callback(result);
+        },
+        error: function(result, status, xhr) {
+        }
+    });
 }
 
 function updateScreen() {
@@ -133,13 +246,6 @@ function drawPath(waypoints) {
     }
 }
 
-function pix2world(pix) { return pix * resolution; }
-function world2pix(meter) { return meter / resolution; }
-
-function x2v(x) { return height / 2 - world2pix(x); }
-function y2u(y) { return width / 2 - world2pix(y); }
-function v2x(v) { return pix2world(height / 2 - v); }
-function u2y(u) { return pix2world(width / 2 - u); }
 
 function msg(text) {
     $("#notification").html(text);
