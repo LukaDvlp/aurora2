@@ -1,6 +1,6 @@
 /*!
  *  @file    disparity.cpp
- *  @author  taiki mashimo <mashimo.taiki@ac.jaxa.jp>
+ *  @author  Taiki Mashimo <mashimo.taiki@ac.jaxa.jp>
  *  @date    2015-6-15
  *  @brief   Caluculate disparity from stereo images, and get 3D depth data from them.
  */
@@ -43,7 +43,9 @@ void disparity(const cv::Mat &imL, cv::Mat &imR, cv::Mat &imD) {
     int P2 = 32 * sad_win * sad_win;
     int prefiltercap = 63. * contrast_threshold;
     
-    cv::StereoSGBM sgbm(0, max_disp, sad_win, P1, P2, distance_threshold, prefiltercap, uniqueness_threshold, 0, 0, false);
+    int speckle_win = 150;
+    int speckle_range = 2;
+    cv::StereoSGBM sgbm(0, max_disp, sad_win, P1, P2, distance_threshold, prefiltercap, uniqueness_threshold, speckle_win, speckle_range, false);
     sgbm(imL_, imR_, imD_);
 
     imD.create(h, w, imD_.type());

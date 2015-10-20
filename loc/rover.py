@@ -30,6 +30,7 @@ rTc = []  # right camera to left camera
 
 KL = []  # camera matrix for left camera
 KR = []  # camera matrix for right camera
+Q  = []  # camera reprojection matrix for left camera
 
 baseline = 0  # stereo baseline
 focal_length = 0  # focal length
@@ -54,24 +55,30 @@ def setup(yamlfile):
     rTc = tfm.translation_matrix([0, rconfig['baseline'], 0])
     cTr = inv(rTc)
 
+    global width, length
+    width = rconfig['width']
+    length = rconfig['length']
+
     # Camera settings
     data = open(core.get_full_path(rconfig['camera_yaml'])).read()
     cconfig = yaml.load(data)
 
-    global KL, KR
+    global baseline, focal_length
+    baseline = rconfig['baseline']
+    focal_length = cconfig['cameraL']['f']
+
+    global KL, KR, Q
     KL = np.array([[cconfig['cameraL']['f'], 0, cconfig['cameraL']['uv0'][0]],
                    [0, cconfig['cameraL']['f'], cconfig['cameraL']['uv0'][1]],
                    [0, 0, 1]])
     KR = np.array([[cconfig['cameraR']['f'], 0, cconfig['cameraR']['uv0'][0]],
                    [0, cconfig['cameraR']['f'], cconfig['cameraR']['uv0'][1]],
                    [0, 0, 1]])
+    Q  = np.array([[1, 0, 0, -cconfig['cameraL']['uv0'][0]],
+                   [0, 1, 0, -cconfig['cameraL']['uv0'][1]],
+                   [0, 0, 0, focal_length],
+                   [0, 0, 1.0/baseline, 0]])
 
-    # misc.
-    global baseline, focal_length, width, length
-    baseline = rconfig['baseline']
-    focal_length = cconfig['cameraL']['f']
-    width = rconfig['width']
-    length = rconfig['length']
 
 
 def deg2rad(deg):
