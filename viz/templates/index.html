@@ -178,11 +178,22 @@
                     </div>
                 </div>
 
-                <!-- Autonomous Drive -->
-                <div id="drive-selector-pane" title="Toggle autonomous drive mode">
-                    <div class="sidebar-title"> Autonomous Drive </div>
+                <!-- Program manager -->
+                <div id="program-manager-pane" title="Manage program">
+                    <div class="sidebar-title"> Manage Program </div>
                     <div class="sidebar-item">
+                        <div id="logger-status-selector" class="btn-group" data-toggle="buttons">
+                            <label>Logger</label>
+                            <label class="btn btn-default"> <input type="radio" name="logger-status" value="1"> ON </label>
+                            <label class="btn btn-default active"> <input type="radio" name="logger-status" value="0"> OFF </label>
+                        </div>
+                        <div id="impipe-status-selector" class="btn-group" data-toggle="buttons">
+                            <label>Logger</label>
+                            <label class="btn btn-default"> <input type="radio" name="logger-status" value="1"> ON </label>
+                            <label class="btn btn-default active"> <input type="radio" name="logger-status" value="0"> OFF </label>
+                        </div>
                         <div id="drive-selector" class="btn-group" data-toggle="buttons">
+                            <label>Drive enable</label>
                             <label class="btn btn-default"> <input type="radio" name="auto-drive" value="1"> ON </label>
                             <label class="btn btn-default active"> <input type="radio" name="auto-drive" value="0"> OFF </label>
                         </div>

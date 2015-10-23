@@ -60,6 +60,7 @@ function refleshImages(rate) {
 }
 
 function refleshMeasurements(rate) {
+    /*
     getResource('sensor/imu/roll', function(arg) { 
         var obj = $("#global-pose-roll");
         obj.text(arg); 
@@ -86,27 +87,13 @@ function refleshMeasurements(rate) {
         obj.text(arg); 
         obj.css("color", (parseFloat(arg) < 28 ? "red": "black"));
     });
+    */
 
     setTimeout(function() {
         refleshMeasurements(rate);
     }, 1000.0 / rate);
 }
 
-//!
-// Visualization utility
-//
-
-function selectMapMode(mode) {
-    switch (mode) {
-        case "VISUAL":
-            break;
-        case "HAZARD":
-            break;
-        case "ELEVATION":
-            break;
-    }
-
-}
 
 
 //!
