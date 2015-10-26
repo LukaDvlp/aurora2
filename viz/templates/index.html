@@ -60,7 +60,7 @@
         <div class="row">
             <div id="column-head" class="col-lg-12">
                 <h1 class="page-header">Rover Controller
-                    <small>v1.02</small>
+                    <small>v1.03</small>
                 </h1>
             </div>
         </div> 
@@ -152,8 +152,13 @@
                             <span>V</span>
                         </div>
                         <div>
-                            <span>Power Consumption</span>
-                            <span id="state-power" class="lead">20.8</span>
+                            <span>COM Power</span>
+                            <span id="state-com-power" class="lead">20.8</span>
+                            <span>W</span>
+                        </div>
+                        <div>
+                            <span>MOB Power</span>
+                            <span id="state-mob-power" class="lead">20.8</span>
                             <span>W</span>
                         </div>
                     </div>
@@ -182,20 +187,23 @@
                 <div id="program-manager-pane" title="Manage program">
                     <div class="sidebar-title"> Manage Program </div>
                     <div class="sidebar-item">
-                        <div id="logger-status-selector" class="btn-group" data-toggle="buttons">
-                            <label>Logger</label>
-                            <label class="btn btn-default"> <input type="radio" name="logger-status" value="1"> ON </label>
-                            <label class="btn btn-default active"> <input type="radio" name="logger-status" value="0"> OFF </label>
+                        <div id="logger-status-selector" class="checkbox">
+                            <label>
+                                <input type="checkbox" name="logger-status" value="1"> 
+                                Logger
+                            </label>
                         </div>
-                        <div id="impipe-status-selector" class="btn-group" data-toggle="buttons">
-                            <label>Logger</label>
-                            <label class="btn btn-default"> <input type="radio" name="logger-status" value="1"> ON </label>
-                            <label class="btn btn-default active"> <input type="radio" name="logger-status" value="0"> OFF </label>
+                        <div id="vision-status-selector" class="checkbox">
+                            <label>
+                                <input type="checkbox" name="vision-status" value="1"> 
+                                Vision pipeline
+                            </label>
                         </div>
-                        <div id="drive-selector" class="btn-group" data-toggle="buttons">
-                            <label>Drive enable</label>
-                            <label class="btn btn-default"> <input type="radio" name="auto-drive" value="1"> ON </label>
-                            <label class="btn btn-default active"> <input type="radio" name="auto-drive" value="0"> OFF </label>
+                        <div id="drive-selector" class="checkbox">
+                            <label>
+                                <input type="checkbox" name="drive-status">
+                                Drive enable
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -232,16 +240,25 @@
                     </div>
                 </div>
 
-                <!-- Path Upload -->
-                <div id="drive-selector" title="Upload waypoints information as a KML file">
-                    <div class="sidebar-title"> Path Upload (kml)</div>
+                <!-- Camera view mode -->
+                <div id="cam-mode-selector" title="Select camera display mode">
+                    <div class="sidebar-title"> Camera view </div>
                     <div class="sidebar-item">
-                        <form class="form-inline">
-                            <div class="form-group">
-                                <input type="file" id="exampleInputFile">
-                            </div>
-                            <button type="submit" class="btn btn-default btn-xs">Upload</button>
-                        </form>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="cam-mode" value="LEFT" checked> Left
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="cam-mode" value="RIGHT"> Right
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="map-mode" value="DISPARITY" disabled> <strike>Disparity</strike>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -275,6 +292,19 @@
             </div>
 
             <div id="column-tools3" class="col-lg-3">
+
+                <!-- Path Upload -->
+                <div id="drive-selector" title="Upload waypoints information as a KML file">
+                    <div class="sidebar-title"> Path Upload (kml)</div>
+                    <div class="sidebar-item">
+                        <form class="form-inline">
+                            <div class="form-group">
+                                <input type="file" id="exampleInputFile">
+                            </div>
+                            <button type="submit" class="btn btn-default btn-xs">Upload</button>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- Special command -->
                 <div id="special-command-pane" title="Send special commands">

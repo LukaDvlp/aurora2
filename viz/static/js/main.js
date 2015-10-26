@@ -13,13 +13,18 @@ function y2u(y) { return width / 2 - world2pix(y); }
 function v2x(v) { return pix2world(height / 2 - v); }
 function u2y(u) { return pix2world(width / 2 - u); }
 
+function rad2deg(rad) { return rad / 3.1415 * 180.0; }
+function deg2rad(deg) { return deg * 3.1415 / 180.0; }
+
 
 //!
 // Main loop
 //
 
 var map_mode = "VISUAL";
+var cam_mode = "LEFT";
 var drive_mode = 0;
+var logger_mode = false;
 
 function domReady() {
     // canvas setting
@@ -35,13 +40,12 @@ function domReady() {
     refleshImages(1);
     refleshMeasurements(2);
 
-    $("[name=map-mode]").change(function() {
-        map_mode = $(this).val();
-    });
+    $("[name=map-mode]").change(function() { map_mode = $(this).val(); });
 
-    $("[name=auto-drive]").change(function() {
-        drive_mode = $(this).val();
-    });
+    $("[name=logger-status]").change(function() { logger_mode = $(this).is(":checked"); });
+    $("[name=vision-status]").change(function() { vision_mode = $(this).is(":checked"); });
+    $("[name=drive-status]") .change(function() { drive_mode  = $(this).is(":checked"); });
+
 }
 
 function refleshImages(rate) {
@@ -53,13 +57,44 @@ function refleshImages(rate) {
             $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_hazard_map.png?" + Math.random());
             break;
     }
-    $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
+
+    switch (cam_mode) {
+        case "LEFT":
+            $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240");
+            break;
+        case "RIGHT":
+            $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240");
+            break;
+    }
+    //$("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
     setTimeout(function() {
         refleshImages(rate);
     }, 1000.0 / rate);
 }
 
 function refleshMeasurements(rate) {
+    if (logger_mode) {
+        getResource('adc/get_all', function(arg) {
+            data = arg.split(" ").map(parseFloat);
+            console.log(data);
+
+            $("#global-pose-roll").text(rad2deg(data[3]).toFixed(1));
+            $("#global-pose-pitch").text(rad2deg(data[4]).toFixed(1));
+            $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[3])) > 20 ? "red": "black"));
+            $("#global-pose-pitch").css("color", (Math.abs(rad2deg(data[4])) > 20 ? "red": "black"));
+            $("#img-roll").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
+            $("#img-pitch").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
+            
+
+            $("#state-mob-busv").text(data[12].toFixed(1));
+            $("#state-com-busv").text(data[13].toFixed(1));
+            $("#state-mob-busv").css("color", (data[12] < 28 ? "red": "black"));
+            $("#state-com-busv").css("color", (data[12] < 14 ? "red": "black"));
+
+            $("#state-mob-power").text((data[12] * data[14]).toFixed(1));
+            $("#state-com-power").text((data[13] * data[15]).toFixed(1));
+        });
+    }
     /*
     getResource('sensor/imu/roll', function(arg) { 
         var obj = $("#global-pose-roll");
