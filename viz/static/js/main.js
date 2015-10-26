@@ -80,8 +80,8 @@ function refleshMeasurements(rate) {
 
             $("#global-pose-roll").text(rad2deg(data[3]).toFixed(1));
             $("#global-pose-pitch").text(rad2deg(data[4]).toFixed(1));
-            $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[3])) > 20 ? "red": "black"));
-            $("#global-pose-pitch").css("color", (Math.abs(rad2deg(data[4])) > 20 ? "red": "black"));
+            $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[3])) > 15 ? "red": "black"));
+            $("#global-pose-pitch").css("color", (Math.abs(rad2deg(data[4])) > 15 ? "red": "black"));
             $("#img-roll").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
             $("#img-pitch").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
             
@@ -89,7 +89,7 @@ function refleshMeasurements(rate) {
             $("#state-mob-busv").text(data[12].toFixed(1));
             $("#state-com-busv").text(data[13].toFixed(1));
             $("#state-mob-busv").css("color", (data[12] < 28 ? "red": "black"));
-            $("#state-com-busv").css("color", (data[12] < 14 ? "red": "black"));
+            $("#state-com-busv").css("color", (data[13] < 14 ? "red": "black"));
 
             $("#state-mob-power").text((data[12] * data[14]).toFixed(1));
             $("#state-com-power").text((data[13] * data[15]).toFixed(1));

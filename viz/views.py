@@ -24,7 +24,7 @@ def show_main():
 
 
 adc = [ModbusTcpClient('192.168.201.17', port=502),
-       ModbusTcpClient('192.168.201.17', port=502)]
+       ModbusTcpClient('192.168.201.13', port=502)]
 adc_status = [False, False]
 adc_channels = 8
 adc_meas = [np.zeros(adc_channels), np.zeros(adc_channels)]
@@ -72,7 +72,7 @@ def update_adc(rate):
         adc_meas[idx][2] = (vlt[2] - 2.5) / 1.2  # AccZ  ???
         adc_meas[idx][3] = vlt[3]
         adc_meas[idx][4] = vlt[4] * 4.0  # BUS_V 28
-        adc_meas[idx][5] = vlt[5] * 4.0  # BUS_V 14
+        adc_meas[idx][5] = vlt[5] * 2.0  # BUS_V 14
         adc_meas[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
         adc_meas[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
     else:
