@@ -187,25 +187,37 @@
                 <div id="program-manager-pane" title="Manage program">
                     <div class="sidebar-title"> Manage Program </div>
                     <div class="sidebar-item">
-                        <div id="logger-status-selector" class="checkbox">
+                        <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="logger-status" value="1"> 
-                                Logger
+                                <input type="checkbox" name="adc-status" value="1"> 
+                                AD Converter
                             </label>
                         </div>
-                        <div id="vision-status-selector" class="checkbox">
+                        <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="vision-status" value="1"> 
                                 Vision pipeline
                             </label>
                         </div>
-                        <div id="drive-selector" class="checkbox">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="logger-status" value="1"> 
+                                Logger
+                            </label>
+                        </div>
+                        <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="drive-status">
                                 Drive enable
                             </label>
                         </div>
                     </div>
+                </div>
+
+                <!-- msg pane -->
+                <div id="msg-pane" title="Log">
+                    <div class="sidebar-title"> Log </div>
+                    <div id="notification" class="sidebar-item"></div>
                 </div>
 
             </div>
@@ -256,7 +268,7 @@
                         </div>
                         <div class="radio">
                             <label>
-                                <input type="radio" name="map-mode" value="DISPARITY" disabled> <strike>Disparity</strike>
+                                <input type="radio" name="cam-mode" value="DISPARITY"> Disparity
                             </label>
                         </div>
                     </div>

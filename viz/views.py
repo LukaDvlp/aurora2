@@ -28,13 +28,20 @@ adc = [ModbusTcpClient('192.168.201.17', port=502),
 adc_status = [False, False]
 adc_channels = 8
 adc_meas = [np.zeros(adc_channels), np.zeros(adc_channels)]
-adc_rate = 5
 @app.route('/adc/start')
 def adc_start():
     adc_status[0] = adc[0].connect()
     adc_status[1] = adc[1].connect()
     print 'Modbus Connection: {}, {}'.format(adc_status[0], adc_status[1])
-    update_adc(adc_rate)
+    return ''
+
+
+@app.route('/adc/stop')
+def adc_stop():
+    for i in range(len(adc_status)):
+        if adc_status[i]:
+            adc[i].close()
+            adc_status[i] = False
     return ''
 
 
@@ -73,12 +80,15 @@ def update_adc(rate):
         adc_meas[idx][3] = vlt[3]
         adc_meas[idx][4] = vlt[4] * 4.0  # BUS_V 28
         adc_meas[idx][5] = vlt[5] * 2.0  # BUS_V 14
-        adc_meas[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
-        adc_meas[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
+        adc_meas[idx][6] = 0
+        adc_meas[idx][7] = 0
+        #adc_meas[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
+        #adc_meas[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
     else:
         adc_meas[idx] = np.zeros(adc_channels)
 
     threading.Timer(1.0 / rate, update_adc, args=[rate]).start()
+update_adc(rate=5)
 
 
 @app.route('/adc/get_all')

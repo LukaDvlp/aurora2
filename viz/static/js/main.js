@@ -23,6 +23,7 @@ function deg2rad(deg) { return deg * 3.1415 / 180.0; }
 
 var map_mode = "VISUAL";
 var cam_mode = "LEFT";
+var vision_mode = 0;
 var drive_mode = 0;
 var logger_mode = false;
 
@@ -41,9 +42,11 @@ function domReady() {
     refleshMeasurements(2);
 
     $("[name=map-mode]").change(function() { map_mode = $(this).val(); });
+    $("[name=cam-mode]").change(function() { cam_mode = $(this).val(); });
 
-    $("[name=logger-status]").change(function() { logger_mode = $(this).is(":checked"); });
+    $("[name=adc-status]").change(function() { setADCStatus($(this).is(":checked")); });
     $("[name=vision-status]").change(function() { vision_mode = $(this).is(":checked"); });
+    $("[name=logger-status]").change(function() { logger_mode = $(this).is(":checked"); });
     $("[name=drive-status]") .change(function() { drive_mode  = $(this).is(":checked"); });
 
 }
@@ -65,6 +68,10 @@ function refleshImages(rate) {
         case "RIGHT":
             $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240");
             break;
+        case "DISPARITY":
+            $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_disparity.png?" + Math.random());
+            break;
+
     }
     //$("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
     setTimeout(function() {
@@ -130,6 +137,21 @@ function refleshMeasurements(rate) {
 }
 
 
+function setADCStatus(flag) {
+    if (flag == true) {
+        getResource('adc/start', function(arg) {
+            msg("ADC Start");
+            //log.console(arg);
+        });
+    } else {
+        getResource('adc/stop', function(arg) {
+            msg("ADC Stop");
+            //log.console(arg);
+        });
+    }
+}
+
+
 
 //!
 // Network utility
@@ -144,6 +166,7 @@ function getResource(resource, callback) {
             callback(result);
         },
         error: function(result, status, xhr) {
+            msg(result);
         }
     });
 }
