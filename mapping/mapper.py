@@ -22,7 +22,6 @@ vizmap = []
 clsmap = []
 hzdmap = []
 
-@decorator.runonce
 def setup(yamlfile):
     '''load config from yaml'''
     data = open(yamlfile).read()
