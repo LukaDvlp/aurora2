@@ -26,6 +26,7 @@ var cam_mode = "LEFT";
 var vision_mode = 0;
 var drive_mode = 0;
 var logger_mode = false;
+var adc_mode = false;
 
 function domReady() {
     // canvas setting
@@ -63,10 +64,10 @@ function refleshImages(rate) {
 
     switch (cam_mode) {
         case "LEFT":
-            $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240");
+            $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
             break;
         case "RIGHT":
-            $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240");
+            $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
             break;
         case "DISPARITY":
             $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_disparity.png?" + Math.random());
@@ -80,7 +81,7 @@ function refleshImages(rate) {
 }
 
 function refleshMeasurements(rate) {
-    if (logger_mode) {
+    if (adc_mode) {
         getResource('adc/get_all', function(arg) {
             data = arg.split(" ").map(parseFloat);
             console.log(data);
@@ -137,8 +138,9 @@ function refleshMeasurements(rate) {
 }
 
 
-function setADCStatus(flag) {
-    if (flag == true) {
+function setADCStatus(_adc_mode) {
+    adc_mode = _adc_mode;
+    if (adc_mode == true) {
         getResource('adc/start', function(arg) {
             msg("ADC Start");
             //log.console(arg);

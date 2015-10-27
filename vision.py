@@ -52,6 +52,7 @@ class VisionServer(server_wrapper.ServerBase):
         ## get image
         frame, imL, imR = camera.get_stereo_images()
         if imL is None or imR is None: 
+            print "No image found"
             self.rate_pl.sleep()
             return
         #imL, imR = camera.rectify_stereo(imL, imR)

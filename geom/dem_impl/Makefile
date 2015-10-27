@@ -41,12 +41,12 @@ $(TARGET).out: $(TARGET).cpp
 	#install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
 
 $(TARGET).so: $(TARGET).cpp
-	brew link python
+	#brew link python
 	cd $(NP2CV_DIR) && make
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -fPIC -c $(TARGET).cpp
 	$(CXX) -shared $(TARGET).o $(LIBS) -o $@
-	install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
-	brew unlink python
+	#install_name_tool -change np2cv.so $(NP2CV_DIR)/np2cv.so $@
+	#brew unlink python
 
 ################################################################################
 

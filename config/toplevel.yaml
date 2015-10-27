@@ -1,4 +1,4 @@
 rover:  'config/rover_coords.yaml'
-camera: 'config/camera_local_config.yaml'
+camera: 'config/camera_config.yaml'
 mapper: 'config/map_config.yaml'
 

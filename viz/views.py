@@ -33,6 +33,7 @@ def adc_start():
     adc_status[0] = adc[0].connect()
     adc_status[1] = adc[1].connect()
     print 'Modbus Connection: {}, {}'.format(adc_status[0], adc_status[1])
+    update_adc(rate=1)
     return ''
 
 
@@ -60,9 +61,9 @@ def update_adc(rate):
         adc_meas[idx][0] = (vlt[0] - 2.5185) / 1.2075  # AccX
         adc_meas[idx][1] = (vlt[1] - 2.5172) / 1.2138  # AccY
         adc_meas[idx][2] = (vlt[2] - 2.5195) / 1.2075  # AccZ
-        adc_meas[idx][3] = np.arcsin((vlt[3] - 2.5064) / 3.8134)  # IncX
-        adc_meas[idx][4] = np.arcsin((vlt[4] - 2.4962) / 3.9963)  # IncY
-        adc_meas[idx][5] = (vlt[5] - 2.4067) / 0.0799  # Gyro
+        adc_meas[idx][3] = (vlt[3] - 2.4067) / 0.0799  # Gyro
+        adc_meas[idx][4] = np.arcsin((vlt[4] - 2.5064) / 3.8134)  # IncX
+        adc_meas[idx][5] = np.arcsin((vlt[5] - 2.4962) / 3.9963)  # IncY
         adc_meas[idx][6] = vlt[6]
         adc_meas[idx][7] = vlt[7]
     else:
@@ -82,13 +83,28 @@ def update_adc(rate):
         adc_meas[idx][5] = vlt[5] * 2.0  # BUS_V 14
         adc_meas[idx][6] = 0
         adc_meas[idx][7] = 0
+        print vlt[0:3]
         #adc_meas[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
         #adc_meas[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
     else:
         adc_meas[idx] = np.zeros(adc_channels)
 
+    #print ' '.join(['{:.2f}'.format(m) for m in adc_meas[0]] + ['{:.2f}'.format(m) for m in adc_meas[1]])
+    print "==================="
+    print "AccX: {:.2f}".format(adc_meas[0][0])
+    print "AccY: {:.2f}".format(adc_meas[0][1])
+    print "AccZ: {:.2f}".format(adc_meas[0][2])
+    print "Gyro: {:.2f}".format(adc_meas[0][3])
+    print "IncX: {:.2f}".format(adc_meas[0][4] / 3.14 * 180)
+    print "IncY: {:.2f}".format(adc_meas[0][5] / 3.14 * 180)
+    print "AccX: {:.2f}".format(adc_meas[1][0])
+    print "AccY: {:.2f}".format(adc_meas[1][1])
+    print "AccZ: {:.2f}".format(adc_meas[1][2])
+    print "V_28: {:.2f}".format(adc_meas[1][4])
+    print "V_14: {:.2f}".format(adc_meas[1][5])
+    print "I_28: {:.2f}".format(adc_meas[1][6])
+    print "I_14: {:.2f}".format(adc_meas[1][7])
     threading.Timer(1.0 / rate, update_adc, args=[rate]).start()
-update_adc(rate=5)
 
 
 @app.route('/adc/get_all')
