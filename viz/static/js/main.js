@@ -46,7 +46,7 @@ function domReady() {
     $("[name=cam-mode]").change(function() { cam_mode = $(this).val(); });
 
     $("[name=adc-status]").change(function() { setADCStatus($(this).is(":checked")); });
-    $("[name=vision-status]").change(function() { vision_mode = $(this).is(":checked"); });
+    $("[name=vision-status]").change(function() { setVisionStatus($(this).is(":checked")); });
     $("[name=logger-status]").change(function() { logger_mode = $(this).is(":checked"); });
     $("[name=drive-status]") .change(function() { drive_mode  = $(this).is(":checked"); });
 
@@ -84,7 +84,7 @@ function refleshMeasurements(rate) {
     if (adc_mode) {
         getResource('adc/get_all', function(arg) {
             data = arg.split(" ").map(parseFloat);
-            console.log(data);
+            //console.log(data);
 
             $("#global-pose-roll").text(rad2deg(data[3]).toFixed(1));
             $("#global-pose-pitch").text(rad2deg(data[4]).toFixed(1));
@@ -103,6 +103,17 @@ function refleshMeasurements(rate) {
             $("#state-com-power").text((data[13] * data[15]).toFixed(1));
         });
     }
+
+    if (vision_mode) {
+        getResource('vision/get_pose', function(arg) {
+            data = arg.split(" ").map(parseFloat);
+
+            $("#global-position-east").text(data[0].toFixed(2));
+            $("#global-position-north").text(data[1].toFixed(2));
+            $("#global-position-heading").text(rad2deg(data[1]).toFixed(1));
+        });
+    }
+
     /*
     getResource('sensor/imu/roll', function(arg) { 
         var obj = $("#global-pose-roll");
@@ -148,6 +159,22 @@ function setADCStatus(_adc_mode) {
     } else {
         getResource('adc/stop', function(arg) {
             msg("ADC Stop");
+            //log.console(arg);
+        });
+    }
+}
+
+
+function setVisionStatus(_vision_mode) {
+    vision_mode = _vision_mode;
+    if (vision_mode == true) {
+        getResource('vision/start', function(arg) {
+            msg("Vision Start");
+            //log.console(arg);
+        });
+    } else {
+        getResource('vision/stop', function(arg) {
+            msg("Vision Stop");
             //log.console(arg);
         });
     }
@@ -295,7 +322,9 @@ function drawPath(waypoints) {
 
 
 function msg(text) {
-    $("#notification").html(text);
+    var date = new Date();
+    var date_fmt = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    $("#notification").html(date_fmt + "--" + text + "<br/>" + $("#notification").html());
 }
 
 $( domReady ); 

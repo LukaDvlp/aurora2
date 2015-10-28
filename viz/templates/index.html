@@ -71,7 +71,7 @@
                 <div id="map-container">
                     <img id="map-snapshot" class="covered"/>
                     <canvas id="canvas" class="covered"></canvas>
-                    <img src="../static/img/compass.png" class="covered" style="transform: rotate(10deg); margin: 10px 30px;"/>
+                    <img src="../static/img/compass.png" class="covered" style="transform: rotate(-120deg); margin: 10px 30px;"/>
                 </div>
             </div>
 
@@ -126,7 +126,7 @@
                         </div>
                         <div>
                             <span>Heading</span>
-                            <span id="global-position-y" class="lead">1.3</span>
+                            <span id="global-position-heading" class="lead">1.3</span>
                             <span>deg</span>
                         </div>
                         <div>
@@ -214,12 +214,6 @@
                     </div>
                 </div>
 
-                <!-- msg pane -->
-                <div id="msg-pane" title="Log">
-                    <div class="sidebar-title"> Log </div>
-                    <div id="notification" class="sidebar-item"></div>
-                </div>
-
             </div>
 
         </div>
@@ -305,6 +299,26 @@
 
             <div id="column-tools3" class="col-lg-3">
 
+                <!-- Send direct command -->
+                <div id="direct-command-pane" title="Send a command directly to the controller">
+                    <div class="sidebar-title"> Direct Command </div>
+                    <div class="sidebar-item">
+                        <form class="form-inline">
+                            <div class="form-group">
+                                <label>Command</label>
+                                <input type="text" class="form-control" id="direct-command" placeholder="">
+                                <p class="help-block">
+                                d1 ... drive 1 meter <br/>
+                                f0 ... stop <br/>
+                                s5 ... front steering <br/>
+                                u5 ... all-wheel steering
+                                </p>
+                            </div>
+                            <button type="submit" class="btn btn-default">Send</button>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Path Upload -->
                 <div id="drive-selector" title="Upload waypoints information as a KML file">
                     <div class="sidebar-title"> Path Upload (kml)</div>
@@ -332,25 +346,12 @@
 
             <div id="column-tools4" class="col-lg-3">
 
-                <!-- Send direct command -->
-                <div id="direct-command-pane" title="Send a command directly to the controller">
-                    <div class="sidebar-title"> Direct Command </div>
-                    <div class="sidebar-item">
-                        <form class="form-inline">
-                            <div class="form-group">
-                                <label>Command</label>
-                                <input type="text" class="form-control" id="direct-command" placeholder="">
-                                <p class="help-block">
-                                d1 ... drive 1 meter <br/>
-                                f0 ... stop <br/>
-                                s5 ... front steering <br/>
-                                u5 ... all-wheel steering
-                                </p>
-                            </div>
-                            <button type="submit" class="btn btn-default">Send</button>
-                        </form>
-                    </div>
+                <!-- msg pane -->
+                <div id="msg-pane" title="Log">
+                    <div class="sidebar-title"> Log </div>
+                    <div id="notification" class="sidebar-item"></div>
                 </div>
+
             </div>
 
         </div> 

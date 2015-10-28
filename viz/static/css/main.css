@@ -58,3 +58,9 @@
     padding: 0;
 }
 
+#notification {
+    overflow: auto;
+    height: 200px;
+    color: #555555;
+    font-size: 80%;
+}

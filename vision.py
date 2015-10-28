@@ -44,6 +44,9 @@ class VisionServer(server_wrapper.ServerBase):
         self.pose = pose2d.Pose2D()
 
         self.rate_pl = rate.Rate(0.7, name='pipeline')
+
+
+        self.msg = ""
     
 
     def worker(self):
@@ -65,6 +68,7 @@ class VisionServer(server_wrapper.ServerBase):
         pTc = vo.update_stereo(imLg, imRg)
         p = self.pose.update_from_matrix(pTc)
         print 'INFO(nav): X={:.2f}, Y={:.2f}, THETA={:.1f}'.format(p[0], p[1], math.degrees(p[2]))
+        self.msg = '{:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2])
 
         # stereo
         imD = dense_stereo.disparity(imLg, imRg)
@@ -90,7 +94,8 @@ class VisionServer(server_wrapper.ServerBase):
         self.rate_pl.sleep()
 
 
-    def handler(self):
+    def handler(self, msg):
+        self.sock.send(self.msg)
         pass
 
 

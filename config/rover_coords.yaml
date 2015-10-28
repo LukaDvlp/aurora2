@@ -1,12 +1,12 @@
-baseline: 0.30  # m
 wheelbase: 0.50  # m
-tilt: 25  # degrees
-camera_height: 1.1  # m
-camera_yaml: config/camera_config.yaml
+#baseline: 0.30  # m
+#tilt: 25  # degrees
+#camera_height: 1.1  # m
+#camera_yaml: config/camera_config.yaml
 width: 0.9  # m
 length: 0.9  # m
 
-#baseline: 0.10  # m
-#tilt: 20  # degrees
-#camera_height: 0.6  # m
-#camera_yaml: config/camera_local_config.yaml
+baseline: 0.10  # m
+tilt: 20  # degrees
+camera_height: 0.6  # m
+camera_yaml: config/camera_local_config.yaml

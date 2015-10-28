@@ -80,10 +80,11 @@ def start(serverinfo, MyServer):
             if term_flag: 
                 break
             r, w, e = select.select([csock,], [csock,], [], 5)
+            msg = ""
             if r:
                 msg = csock.recv(1024)
                 if len(msg) == 0: break  # socket closed
-                srv.handler(msg)
+            srv.handler(msg)
             srv.worker()
         srv.finalize()
         del srv
