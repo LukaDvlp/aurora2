@@ -86,9 +86,9 @@ function refleshMeasurements(rate) {
             data = arg.split(" ").map(parseFloat);
             //console.log(data);
 
-            $("#global-pose-roll").text(rad2deg(data[3]).toFixed(1));
+            $("#global-pose-roll").text(rad2deg(data[5]).toFixed(1));
             $("#global-pose-pitch").text(rad2deg(data[4]).toFixed(1));
-            $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[3])) > 15 ? "red": "black"));
+            $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[5])) > 15 ? "red": "black"));
             $("#global-pose-pitch").css("color", (Math.abs(rad2deg(data[4])) > 15 ? "red": "black"));
             $("#img-roll").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
             $("#img-pitch").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
