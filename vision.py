@@ -166,21 +166,34 @@ class VisionServer(server_wrapper.ServerBase):
             if self.wp.shape[0] > 0:
                 p0 = mapper.vizmap.get_pose_pix(np.zeros(3))
                 a0 = (imL.shape[1] / 2, 1.5 * imL.shape[0])
+                wTo = self.pose.matrix_from_pose(self.origin)
                 wTr = self.pose.matrix_from_pose(self.pose.update((0, 0, 0)))
                 for i in range(self.wp.shape[0]):
+                    oTwp = self.pose.matrix_from_pose(self.wp[i])
+                    rTwp = np.dot(np.dot(np.linalg.inv(wTr), wTo), oTwp)
+                    wp_r = self.pose.pose_from_matrix(rTwp)
+
                     # topview
-                    p = mapper.vizmap.get_pose_pix(self.wp[i])
-                    cv2.circle(ovlmap, (int(p[0]), int(p[1])), 3, (255, 0, 200), -1)
+                    p = mapper.vizmap.get_pose_pix(wp_r)
                     cv2.line(ovlmap, (int(p0[0]), int(p0[1])), (int(p[0]), int(p[1])), (200, 0, 0), 3)
+                    cv2.circle(ovlmap, (int(p[0]), int(p[1])), 5, (0, 0, 255), -1)
                     p0 = p
 
                     # left
-                    pp = np.array([[self.wp[0, 0]], [self.wp[0, 1]], [0]])
-                    a = tfm.projectp(pp, rover.KL, np.dot(rover.iTb, wTr))
-                    cv2.circle(ovlimL, (int(a[0]), int(a[1])), 8, (255, 0, 200), -1)
-                    cv2.line(ovlimL, (int(a0[0]), int(a0[1])), (int(a[0]), int(a[1])), (200, 0, 0), 6)
-                    print "a", a
-                    a0 = a
+                    pp = np.array([[wp_r[0]], [wp_r[1]], [0]])
+                    if wp_r[0] > 0.5:
+                        a = tfm.projectp(pp, rover.KL, rover.iTb)
+                        cv2.line(ovlimL, (int(a0[0]), int(a0[1])), (int(a[0]), int(a[1])), (200, 0, 0), 6)
+                        cv2.circle(ovlimL, (int(a[0]), int(a[1])), 8, (0, 0, 255), -1)
+                        a0 = a
+
+                for g in self.goals.queue:
+                    wTg = self.pose.matrix_from_pose(g)
+                    rTg = np.dot(np.linalg.inv(wTr), wTg)
+                    g_rel = self.pose.pose_from_matrix(rTg)
+                    p = mapper.vizmap.get_pose_pix(g_rel)
+                    cv2.circle(ovlmap, (int(p[0]), int(p[1])), 5, (200, 0, 255), -1)
+
 
 
             datadir = core.get_full_path('viz/static/img')
