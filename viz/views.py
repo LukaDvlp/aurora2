@@ -241,7 +241,12 @@ class VisionDaemon(DaemonBase):
 
 
     def set_goal(self, goal):
+        ''' The goal is in the pixel coordinates '''
         self.sendq.put("g {:2f} {:2f}".format(goal[0], goal[1]))
+
+
+    def clear_goal(self):
+        self.sendq.put("c")
 
 
 
@@ -262,16 +267,21 @@ def vision_stop():
     return ""
 
 
-@app.route('/vision/get_pose')
-def vision_get_pose():
+@app.route('/vision/pose/get')
+def vision_pose_get():
     return vision_daemon.get_pose()
 
 
-@app.route('/vision/set_goal', methods=['POST'])
-def vision_set_goal():
+@app.route('/vision/goal/set', methods=['POST'])
+def vision_goal_set():
     goalUV  = (float(request.form['goalU']), float(request.form['goalV']))
     vision_daemon.set_goal((goalUV[0], goalUV[1]))
-    return 'ok'
+    return ''
+
+@app.route('/vision/goal/clear')
+def vision_goal_clear():
+    vision_daemon.clear_goal()
+    return ''
 
 
 @app.route('/drive/start')

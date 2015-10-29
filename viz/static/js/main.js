@@ -30,22 +30,33 @@ flags['adc']    = false;
 flags['drive']  = false;
 
 function domReady() {
-    // canvas setting
+    //! canvas setting
     ctx = $("#canvas")[0].getContext("2d");
-    //updateScreen();
-    setGoal();
+    mouseCB();
 
-    //refleshImages(1);
-    refleshMeasurements(1);
-    refleshMessages(1);
+    //! switch setting
+    $("[name=adc-status]").bootstrapSwitch('onSwitchChange', function() {
+        manageProgram("adc", $(this).is(":checked"));
+    });
+    $("[name=vision-status]").bootstrapSwitch('onSwitchChange', function() {
+        manageProgram("vision", $(this).is(":checked"));
+    });
+    $("[name=logger-status]").bootstrapSwitch('onSwitchChange', function() {
+        manageProgram("logger", $(this).is(":checked"));
+    });
+    $("[name=drive-status]").bootstrapSwitch('onSwitchChange', function() {
+        manageProgram("drive", $(this).is(":checked"));
+    });
 
     $("[name=map-mode]").change(function() { flags['map'] = $(this).val(); });
     $("[name=cam-mode]").change(function() { flags['cam'] = $(this).val(); });
 
-    $("[name=adc-status]").change(function() { manageProgram("adc", $(this).is(":checked")); });
-    $("[name=vision-status]").change(function() { manageProgram("vision", $(this).is(":checked")); });
-    $("[name=logger-status]").change(function() { manageProgram("logger", $(this).is(":checked")); });
-    $("[name=drive-status]").change(function() { manageProgram("drive", $(this).is(":checked")); });
+    $("#btn-download-log").click(function() { alert('not implemented'); });
+
+    //! screen update setting
+    //refleshImages(1);
+    refleshMeasurements(1);
+    refleshMessages(1);
 
 }
 
@@ -102,7 +113,7 @@ function refleshMeasurements(rate) {
     }
 
     if (flags['vision']) {
-        getResource('vision/get_pose', function(arg) {
+        getResource('vision/pose/get', function(arg) {
             data = arg.split(" ").map(parseFloat);
 
             $("#global-position-east").text(data[0].toFixed(2));
@@ -193,7 +204,7 @@ function clearCanvas() {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 
-function setGoal() {
+function mouseCB() {
     mousedown = false;
 
     function _setGoalToInput(e) {
@@ -220,9 +231,9 @@ function setGoal() {
     }
 }
 
-function sendGoal() {
+function setGoal() {
     $("#alert-path").hide();
-    $.post('/vision/set_goal', {
+    $.post('/vision/goal/set', {
         startU: y2u(0),                 startV: x2v(0),
         goalU:  y2u($("#goalY").val()), goalV:  x2v($("#goalX").val()),
     }).done(function(arg) {
