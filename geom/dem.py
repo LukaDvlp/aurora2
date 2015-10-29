@@ -47,6 +47,10 @@ def setup(yamlfile):
 
     dem_impl.setup(dem, rover)
 
+def lvd(imD):
+    return dem_impl.lvd(imD)
+
+
 
 ## Sample code
 if __name__ == '__main__':

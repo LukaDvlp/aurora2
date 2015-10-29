@@ -22,6 +22,7 @@ from aurora.core import core
 from aurora.core import server_wrapper
 from aurora.core import rate
 from aurora.geom import dense_stereo
+from aurora.geom import dem
 from aurora.hw import camera
 from aurora.hw import obc
 from aurora.loc import libviso2 as vo
@@ -44,6 +45,7 @@ class VisionServer(server_wrapper.ServerBase):
         obc.setup()
         vo.setup(rover)
         mapper.setup(core.get_full_path(yamls['mapper']))
+        dem.setup(core.get_full_path(yamls['mapper']))
 
         self.pose = pose2d.Pose2D()
 
@@ -84,6 +86,16 @@ class VisionServer(server_wrapper.ServerBase):
         imD = dense_stereo.disparity(imLg, imRg)
         imD = np.array(imD / 16., dtype=np.float)
 
+        # dem
+        imD_mask = np.zeros(imD.shape, dtype=np.uint8)
+        imD_mask[10:-10, 10:-10] = 1;
+        cv2.fillPoly(imD_mask, [np.array([[90, 470], [10, 70], [0, 70], [0, 470]], dtype=np.int32)], 0, 8)
+        imD *= imD_mask
+        imDEM = dem.lvd(imD)
+        imDEM -= np.amin(imDEM)
+        imDEM *= 255.0 / (np.amax(imDEM) - np.amin(imDEM))
+        #imDEM -= -0.3
+        #imDEM *= 255.0 / 1.0
 
         ## update map
         mapmask = np.zeros(imL.shape, dtype=np.uint8)
@@ -200,6 +212,8 @@ class VisionServer(server_wrapper.ServerBase):
             cv2.imwrite(os.path.join(datadir, '_images_left.png'), ovlimL)
             cv2.imwrite(os.path.join(datadir, '_images_visual_map.png'), cv2.flip(cv2.flip(ovlmap, 1), 0))
             cv2.imwrite(os.path.join(datadir, '_images_disparity.png'), cv2.resize(255 * plt.cm.jet(imD.astype(np.uint8)), (320, 240)))
+            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), 
+                cv2.flip(cv2.transpose(cv2.flip(255 * plt.cm.jet(imDEM.astype(np.uint8)), 1)), 1))
 
 
         if frame % 15 == 0:

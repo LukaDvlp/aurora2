@@ -69,6 +69,9 @@ function refleshImages(rate) {
         case "HAZARD":
             $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_hazard_map.png?" + Math.random());
             break;
+        case "ELEVATION":
+            $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_elev_map.png?" + Math.random());
+            break;
     }
 
     switch (flags['cam']) {
