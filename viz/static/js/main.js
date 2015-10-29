@@ -51,10 +51,11 @@ function domReady() {
     $("[name=map-mode]").change(function() { flags['map'] = $(this).val(); });
     $("[name=cam-mode]").change(function() { flags['cam'] = $(this).val(); });
 
+    $("#btn-set-goal").click(function(e) { e.preventDefault(); setGoal(); });
     $("#btn-download-log").click(function() { alert('not implemented'); });
 
     //! screen update setting
-    //refleshImages(1);
+    refleshImages(1);
     refleshMeasurements(1);
     refleshMessages(1);
 
@@ -72,7 +73,8 @@ function refleshImages(rate) {
 
     switch (flags['cam']) {
         case "LEFT":
-            $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
+            //$("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
+            $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
             break;
         case "RIGHT":
             $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
@@ -160,7 +162,6 @@ function getResource(resource, callback) {
             callback(result);
         },
         error: function(result, status, xhr) {
-            msg(result);
         }
     });
 }
@@ -233,12 +234,19 @@ function mouseCB() {
 
 function setGoal() {
     $("#alert-path").hide();
-    $.post('/vision/goal/set', {
-        startU: y2u(0),                 startV: x2v(0),
-        goalU:  y2u($("#goalY").val()), goalV:  x2v($("#goalX").val()),
-    }).done(function(arg) {
-    }).fail(function(arg) {
-        $("#alert-path").show();
+    var x = $("#goalX").val();
+    var y = $("#goalY").val();
+    msg("Setting target to " + [x, y]);
+    $.ajax({
+        type: "POST",
+        url: '/vision/goal/set',
+        data: { startU: y2u(0), startV: x2v(0),
+                goalU:  y2u(y), goalV:  x2v(x)},
+        success: function(result, status, xhr) {
+        },
+        error: function(result, status, xhr) {
+            $("#alert-path").show();
+        }
     });
 }
 
