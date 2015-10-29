@@ -12,6 +12,7 @@ import os
 import math
 import time
 import yaml
+import Queue
 
 import numpy as np
 import cv2
@@ -46,7 +47,7 @@ class VisionServer(server_wrapper.ServerBase):
         self.rate_pl = rate.Rate(0.7, name='pipeline')
 
 
-        self.msg = ""
+        self.sendq = Queue.Queue()
     
 
     def worker(self):
@@ -68,7 +69,7 @@ class VisionServer(server_wrapper.ServerBase):
         pTc = vo.update_stereo(imLg, imRg)
         p = self.pose.update_from_matrix(pTc)
         print 'INFO(nav): X={:.2f}, Y={:.2f}, THETA={:.1f}'.format(p[0], p[1], math.degrees(p[2]))
-        self.msg = '{:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2])
+        self.sendq.put('xyh {:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2]))
 
         # stereo
         imD = dense_stereo.disparity(imLg, imRg)
@@ -95,8 +96,20 @@ class VisionServer(server_wrapper.ServerBase):
 
 
     def handler(self, msg):
-        self.sock.send(self.msg)
-        pass
+        # send
+        while not self.sendq.empty():
+            m = self.sendq.get()
+            self.sock.send(m + "\n")
+            #time.time(0.01)
+
+        # recv
+        arr = msg.split('\n')[0].split(' ')
+        if arr[0] == 'd':
+            print 'drive enable'
+        elif arr[0] == 'f':
+            print 'drive disable'
+        elif arr[0] == 'g':
+            print 'goal set to {}'.format(arr[1:])
 
 
     def finalize(self):

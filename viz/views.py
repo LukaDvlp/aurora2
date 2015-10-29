@@ -9,8 +9,10 @@
 import sys
 import signal
 import socket
+import itertools
 import time
 import threading
+import Queue
 
 import numpy as np
 from flask import render_template, request
@@ -23,208 +25,272 @@ from aurora.core import rate
 #  Signal Handler
 
 term_flag = False
+
 def signal_handler(signal, frame):
     print 'Terminating.....'
     global term_flag
     term_flag = True
     sys.exit(0)
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
 
 # =============================================================== #
+#   Message Handler
+
+class Messenger:
+    def __init__(self):
+        self.msgs = Queue.Queue()
 
 
-@app.route('/')
-def show_main():
-    return render_template('index.html')
+    def set(self, msg):
+        self.msgs.put(msg)
+
+
+    def get(self):
+        msg = ""
+        while not self.msgs.empty():
+            msg += self.msgs.get_nowait() + "\n"
+        return msg
+
+
+msger = Messenger()
+
+
+@app.route('/message/get')
+def message_get():
+    return msger.get()
+
 
 
 # =============================================================== #
 
-
-adc = [ModbusTcpClient('192.168.201.17', port=502),
-       ModbusTcpClient('192.168.201.13', port=502)]
-adc_status = [False, False]
-adc_channels = 8
-adc_meas = [np.zeros(adc_channels), np.zeros(adc_channels)]
-adc_term_flag = False
-
-def adc_daemon(hz):
-    global adc_term_flag
-    r = rate.Rate(hz, name='adc_daemon')
-    while not term_flag and not adc_term_flag:
-        update_adc()
-        r.sleep()
-
-    print 'ADC finish'
-    adc_term_flag = False
+class DaemonBase(threading.Thread):
+    def __init__(self, hz, name=""):
+        threading.Thread.__init__(self)
+        self.name = name
+        self.rate = rate.Rate(hz, name=self.name)
 
 
-def update_adc():
-    global adc_meas
+    def run(self):
+        self.setup()
+        self.term_flag = False
+        while not term_flag and not self.term_flag:
+            self.worker()
+            self.rate.sleep()
+        print 'worker close ({})'.format(self.name)
+        self.term_flag = False
+        self.finalize()
+
+
+    def stop(self):
+        self.term_flag = True
+
+
+    def set_msg(self, msg):
+        msger.set("[{}] {}".format(self.name, msg))
+
+
+    def setup(self):
+        pass
+
+
+    def worker(self):
+        pass
+    
+    
+    def finalize(self):
+        pass
+
+
+# =============================================================== #
+
+class ADCDaemon(DaemonBase):
+    def __init__(self, hz, name="adc"):
+        DaemonBase.__init__(self, hz, name)
+        self.adc = [ModbusTcpClient('192.168.201.17', port=502),
+                    ModbusTcpClient('192.168.201.13', port=502)]
+        self.adc_channels = 8
+        self.data = np.zeros((2, self.adc_channels))
+
+
+    def setup(self):
+        self.status = [a.connect() for a in self.adc]
+        self.set_msg('ADC Modbus connection: {}, {}'.format(self.status[0], self.status[1]))
+        self.data = np.zeros((2, self.adc_channels))
+
+
+    def worker(self):
+        idx = 0
+        if self.status[idx]:
+            vlt = read(idx)
+            self.data[idx][0] = (vlt[0] - 2.5185) / 1.2075  # AccX
+            self.data[idx][1] = (vlt[1] - 2.5172) / 1.2138  # AccY
+            self.data[idx][2] = (vlt[2] - 2.5195) / 1.2075  # AccZ
+            self.data[idx][3] = (vlt[3] - 2.4067) / 0.0799  # Gyro
+            self.data[idx][4] = np.arcsin((vlt[4] - 2.5064) / 3.8134)  # IncX
+            self.data[idx][5] = np.arcsin((vlt[5] - 2.4962) / 3.9963)  # IncY
+            self.data[idx][6] = vlt[6]
+            self.data[idx][7] = vlt[7]
+
+        idx = 1
+        if self.status[idx]:
+            vlt = read(idx)
+            self.data[idx][0] = (vlt[0] - 2.5) / 1.2  # AccX  ???
+            self.data[idx][1] = (vlt[1] - 2.5) / 1.2  # AccY  ???
+            self.data[idx][2] = (vlt[2] - 2.5) / 1.2  # AccZ  ???
+            self.data[idx][3] = vlt[3]
+            self.data[idx][4] = vlt[4] * 4.0  # BUS_V 28
+            self.data[idx][5] = vlt[5] * 2.0  # BUS_V 14
+            self.data[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
+            self.data[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
+
+
+    def finalize(self):
+        self.data = [np.zeros(self.adc_channels), np.zeros(self.adc_channels)]
+        map(lambda a: a.close(), itertools.compress(self.adc, self.status))
+        self.set_msg("ADC Modbus closed")
+
+
+    def read(self, idx):
+        data = np.zeros(self.adc_channels)
+        if self.status[idx]:
+            reg = self.adc[idx].read_input_registers(0, self.adc_channels)
+            data = raw2volt(reg.registers)
+        return data
+    
+
+    def get_data(self):
+        return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
+
 
     def raw2volt(raw):
         return np.array([10.0 * (m - 2**15) / 2**15 for m in raw])
 
-    # AD Converter #0
-    idx = 0
-    if adc_status[idx]:
-        reg = adc[idx].read_input_registers(0, adc_channels)
-        vlt = raw2volt(reg.registers)
-        
-        adc_meas[idx][0] = (vlt[0] - 2.5185) / 1.2075  # AccX
-        adc_meas[idx][1] = (vlt[1] - 2.5172) / 1.2138  # AccY
-        adc_meas[idx][2] = (vlt[2] - 2.5195) / 1.2075  # AccZ
-        adc_meas[idx][3] = (vlt[3] - 2.4067) / 0.0799  # Gyro
-        adc_meas[idx][4] = np.arcsin((vlt[4] - 2.5064) / 3.8134)  # IncX
-        adc_meas[idx][5] = np.arcsin((vlt[5] - 2.4962) / 3.9963)  # IncY
-        adc_meas[idx][6] = vlt[6]
-        adc_meas[idx][7] = vlt[7]
-    else:
-        adc_meas[idx] = np.zeros(adc_channels)
 
-    # AD Converter #1
-    idx = 1
-    if adc_status[idx]:
-        reg = adc[idx].read_input_registers(0, adc_channels)
-        vlt = raw2volt(reg.registers)
-
-        adc_meas[idx][0] = (vlt[0] - 2.5) / 1.2  # AccX  ???
-        adc_meas[idx][1] = (vlt[1] - 2.5) / 1.2  # AccY  ???
-        adc_meas[idx][2] = (vlt[2] - 2.5) / 1.2  # AccZ  ???
-        adc_meas[idx][3] = vlt[3]
-        adc_meas[idx][4] = vlt[4] * 4.0  # BUS_V 28
-        adc_meas[idx][5] = vlt[5] * 2.0  # BUS_V 14
-        adc_meas[idx][6] = 0
-        adc_meas[idx][7] = 0
-        print vlt[0:3]
-        #adc_meas[idx][6] = (vlt[6] - 2.5) / 0.037  # BUS_I 28
-        #adc_meas[idx][7] = (vlt[7] - 2.5) / 0.037  # BUS_I 14
-    else:
-        adc_meas[idx] = np.zeros(adc_channels)
-
-    #print ' '.join(['{:.2f}'.format(m) for m in adc_meas[0]] + ['{:.2f}'.format(m) for m in adc_meas[1]])
-    print "==================="
-    '''
-    print "AccX: {:.2f}".format(adc_meas[0][0])
-    print "AccY: {:.2f}".format(adc_meas[0][1])
-    print "AccZ: {:.2f}".format(adc_meas[0][2])
-    print "Gyro: {:.2f}".format(adc_meas[0][3])
-    print "IncX: {:.2f}".format(adc_meas[0][4] / 3.14 * 180)
-    print "IncY: {:.2f}".format(adc_meas[0][5] / 3.14 * 180)
-    print "AccX: {:.2f}".format(adc_meas[1][0])
-    print "AccY: {:.2f}".format(adc_meas[1][1])
-    print "AccZ: {:.2f}".format(adc_meas[1][2])
-    print "V_28: {:.2f}".format(adc_meas[1][4])
-    print "V_14: {:.2f}".format(adc_meas[1][5])
-    print "I_28: {:.2f}".format(adc_meas[1][6])
-    print "I_14: {:.2f}".format(adc_meas[1][7])
-    '''
-    #threading.Timer(1.0 / rate, update_adc, args=[rate]).start()
-
+adc_daemon = ADCDaemon(hz=1)
 
 @app.route('/adc/start')
 def adc_start():
-    global adc_term_flag, adc_status
-
-    adc_term_flag = True
-    adc_status[0] = adc[0].connect()
-    adc_status[1] = adc[1].connect()
-    print 'Modbus Connection: {}, {}'.format(adc_status[0], adc_status[1])
-    adc_term_flag = False
-    adc_thread = threading.Thread(target=adc_daemon, args=(1,))
-    adc_thread.start()
-    #update_adc(rate=1)
-    return ''
+    global adc_daemon
+    adc_daemon = ADCDaemon(hz=1, name="adc")
+    adc_daemon.start()
+    return ""
 
 
 @app.route('/adc/stop')
 def adc_stop():
-    global adc_term_flag
-    adc_term_flag = True
-    for i in range(len(adc_status)):
-        if adc_status[i]:
-            adc[i].close()
-    return ''
+    adc_daemon.stop()
+    return ""
 
 
 @app.route('/adc/get_all')
 def adc_get_all():
-    return ' '.join(['{:.2f}'.format(m) for m in adc_meas[0]] + ['{:.2f}'.format(m) for m in adc_meas[1]])
+    return adc_daemon.get_data()
 
 
 # =============================================================== #
 
-vision_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-vision_sock.setblocking(0)
-vision_term_flag = False
-vision_thread = None
-vision_msg = "init"
-vision_pose = np.zeros(3)
+
+class VisionDaemon(DaemonBase):
+    def __init__(self, hz, name="vision"):
+        DaemonBase.__init__(self, hz, name)
+        self.pose = np.zeros(3)
+        self.sendq = Queue.Queue()
+
+    def setup(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(5)
+        ex = self.sock.connect_ex(("localhost", 7777))
+        self.status = (ex == 0)
+        self.set_msg('Socket open: {}'.format(self.status))
+        self.pose = np.zeros(3)
 
 
-def vision_daemon(hz):
-    global vision_term_flag, vision_sock
-    global vision_pose
-    r = rate.Rate(hz, name='vision_daemon')
-    while not term_flag and not vision_term_flag:
-        try:
-            line = vision_sock.recv(1024)
-            vision_pose = np.array([float(n) for n in line.split('\n')[0].split(' ')])
-        except:
-            pass
-        r.sleep()
+    def worker(self):
+        if self.status:
+            # recv
+            line = self.sock.recv(1024)
+            arr = line.split('\n')[0].split(' ')
+            if arr[0] == 'xyh':
+                self.pose = np.array([float(v) for v in arr[1:]])
+                print self.pose
 
-    print 'Vision finish'
-    vision_term_flag = False
+            # send
+            while not self.sendq.empty():
+                msg = self.sendq.get()
+                self.sock.send(msg + "\n")
+                #time.time(0.01)
+    
+    
+    def finalize(self):
+        self.pose = np.zeros(3)
+        self.sock.close()
+        self.set_msg('socket closed')
 
+
+    def get_pose(self):
+        return ' '.join(['{:.2f}'.format(p) for p in self.pose])
+
+
+    def set_drive(self, flag):
+        if flag == True:
+            self.sendq.put("d")
+        else:
+            self.sendq.put("f")
+
+
+    def set_goal(self, goal):
+        self.sendq.put("g {:2f} {:2f}".format(goal[0], goal[1]))
+
+
+
+
+vision_daemon = VisionDaemon(hz=1)
 
 @app.route('/vision/start')
 def vision_start():
-    global vision_sock
-    global vision_term_flag
-    global vision_thread
-    try:
-        vision_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        vision_sock.setblocking(0)
-        vision_sock.connect(('localhost', 7777))
-    except Exception, e:
-        print 'Socket error: {}'.format(e)
-        pass
-    vision_term_flag = False
-    vision_thread = threading.Thread(target=vision_daemon, args=(1,))
-    vision_thread.start()
-    return ''
+    global vision_daemon
+    vision_daemon = VisionDaemon(hz=1)
+    vision_daemon.start()
+    return ""
 
 
 @app.route('/vision/stop')
 def vision_stop():
-    global vision_term_flag
-    vision_term_flag = True
-    try:
-        vision_sock.close()
-    except Exception, e:
-        print 'Socket error: {}'.format(e)
-        pass
-    return ''
+    vision_daemon.stop()
+    return ""
+
 
 @app.route('/vision/get_pose')
 def vision_get_pose():
-    global vision_pose
-    return ' '.join(['{:.2f}'.format(m) for m in vision_pose])
+    return vision_daemon.get_pose()
+
+
+@app.route('/vision/set_goal', methods=['POST'])
+def vision_set_goal():
+    goalUV  = (float(request.form['goalU']), float(request.form['goalV']))
+    vision_daemon.set_goal((goalUV[0], goalUV[1]))
+    return 'ok'
+
+
+@app.route('/drive/start')
+def drive_start():
+    vision_daemon.set_drive(True)
+    return ""
+
+
+@app.route('/drive/stop')
+def drive_stop():
+    vision_daemon.set_drive(False)
+    return ""
+
+
 
 
 @app.route('/vision/enable_drive', methods=['POST'])
 def vision_enable_drive():
     status = float(request.form['status'])
-    #sock.send('xy{:.2f},{:.2f}'.format(goalUV[0], goalUV[1]))
-    return 'ok'
-
-@app.route('/vision/set_goal', methods=['POST'])
-def vision_set_goal():
-    #startUV = (float(request.form['startU']), float(request.form['startV']))
-    goalUV  = (float(request.form['goalU']), float(request.form['goalV']))
-    print goalUV
     #sock.send('xy{:.2f},{:.2f}'.format(goalUV[0], goalUV[1]))
     return 'ok'
 
@@ -254,4 +320,8 @@ def logger_start():
     return ''
 
 
+
+@app.route('/')
+def show_main():
+    return render_template('index.html')
 

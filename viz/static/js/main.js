@@ -1,12 +1,12 @@
 //!
 // Coordinate systems
 //
-resolution = 0.02;  // meter/pix
+dpm = 50  //  pix/meter
 width  = $("#canvas").width();  // pix
 height = $("#canvas").height();  // pix
 
-function pix2world(pix) { return pix * resolution; }
-function world2pix(meter) { return meter / resolution; }
+function pix2world(pix) { return pix / dpm; }
+function world2pix(meter) { return meter * dpm; }
 
 function x2v(x) { return height / 2 - world2pix(x); }
 function y2u(y) { return width / 2 - world2pix(y); }
@@ -21,39 +21,36 @@ function deg2rad(deg) { return deg * 3.1415 / 180.0; }
 // Main loop
 //
 
-var map_mode = "VISUAL";
-var cam_mode = "LEFT";
-var vision_mode = 0;
-var drive_mode = 0;
-var logger_mode = false;
-var adc_mode = false;
+var flags = new Array();
+flags['map'] = "VISUAL";
+flags['cam'] = "LEFT";
+flags['vision'] = false;
+flags['logger'] = false;
+flags['adc']    = false;
+flags['drive']  = false;
 
 function domReady() {
     // canvas setting
     ctx = $("#canvas")[0].getContext("2d");
     //updateScreen();
-    //setGoal();
+    setGoal();
 
-    //setDriveMode($("#drive_mode li").first().children());
-    //
-    //
-    //
+    //refleshImages(1);
+    refleshMeasurements(1);
+    refleshMessages(1);
 
-    refleshImages(1);
-    refleshMeasurements(2);
+    $("[name=map-mode]").change(function() { flags['map'] = $(this).val(); });
+    $("[name=cam-mode]").change(function() { flags['cam'] = $(this).val(); });
 
-    $("[name=map-mode]").change(function() { map_mode = $(this).val(); });
-    $("[name=cam-mode]").change(function() { cam_mode = $(this).val(); });
-
-    $("[name=adc-status]").change(function() { setADCStatus($(this).is(":checked")); });
-    $("[name=vision-status]").change(function() { setVisionStatus($(this).is(":checked")); });
-    $("[name=logger-status]").change(function() { logger_mode = $(this).is(":checked"); });
-    $("[name=drive-status]") .change(function() { drive_mode  = $(this).is(":checked"); });
+    $("[name=adc-status]").change(function() { manageProgram("adc", $(this).is(":checked")); });
+    $("[name=vision-status]").change(function() { manageProgram("vision", $(this).is(":checked")); });
+    $("[name=logger-status]").change(function() { manageProgram("logger", $(this).is(":checked")); });
+    $("[name=drive-status]").change(function() { manageProgram("drive", $(this).is(":checked")); });
 
 }
 
 function refleshImages(rate) {
-    switch (map_mode) {
+    switch (flags['map']) {
         case "VISUAL":
             $("#map-snapshot").attr("src", getBaseUrl() + "img/_images_visual_map.png?" + Math.random());
             break;
@@ -62,7 +59,7 @@ function refleshImages(rate) {
             break;
     }
 
-    switch (cam_mode) {
+    switch (flags['cam']) {
         case "LEFT":
             $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
             break;
@@ -74,14 +71,14 @@ function refleshImages(rate) {
             break;
 
     }
-    //$("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
+
     setTimeout(function() {
         refleshImages(rate);
     }, 1000.0 / rate);
 }
 
 function refleshMeasurements(rate) {
-    if (adc_mode) {
+    if (flags['adc']) {
         getResource('adc/get_all', function(arg) {
             data = arg.split(" ").map(parseFloat);
             //console.log(data);
@@ -90,8 +87,8 @@ function refleshMeasurements(rate) {
             $("#global-pose-pitch").text(rad2deg(data[4]).toFixed(1));
             $("#global-pose-roll").css("color", (Math.abs(rad2deg(data[5])) > 15 ? "red": "black"));
             $("#global-pose-pitch").css("color", (Math.abs(rad2deg(data[4])) > 15 ? "red": "black"));
-            $("#img-roll").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
-            $("#img-pitch").css("transform", "rotate(" + Math.round(rad2deg(data[3])) + "deg)"); 
+            $("#img-roll").css("transform", "rotate(" + Math.round(rad2deg(data[5])) + "deg)"); 
+            $("#img-pitch").css("transform", "rotate(" + Math.round(rad2deg(data[4])) + "deg)"); 
             
 
             $("#state-mob-busv").text(data[12].toFixed(1));
@@ -104,7 +101,7 @@ function refleshMeasurements(rate) {
         });
     }
 
-    if (vision_mode) {
+    if (flags['vision']) {
         getResource('vision/get_pose', function(arg) {
             data = arg.split(" ").map(parseFloat);
 
@@ -114,69 +111,27 @@ function refleshMeasurements(rate) {
         });
     }
 
-    /*
-    getResource('sensor/imu/roll', function(arg) { 
-        var obj = $("#global-pose-roll");
-        obj.text(arg); 
-        obj.css("color", (Math.abs(parseFloat(arg)) > 20 ? "red": "black"));
-
-        $("#img-roll").css("transform", "rotate(" + Math.round(arg) + "deg)"); 
-    });
-
-    getResource('sensor/imu/pitch', function(arg) { 
-        var obj = $("#global-pose-pitch");
-        obj.text(arg); 
-        obj.css("color", (Math.abs(parseFloat(arg)) > 20 ? "red": "black"));
-        $("#img-pitch").css("transform", "rotate(" + Math.round(arg) + "deg)"); 
-    });
-
-    getResource('sensor/bus/com-busv', function(arg) { 
-        var obj = $("#state-com-busv");
-        obj.text(arg); 
-        obj.css("color", (parseFloat(arg) < 28 ? "red": "black"));
-    });
-
-    getResource('sensor/bus/mob-busv', function(arg) { 
-        var obj = $("#state-mob-busv");
-        obj.text(arg); 
-        obj.css("color", (parseFloat(arg) < 28 ? "red": "black"));
-    });
-    */
-
     setTimeout(function() {
         refleshMeasurements(rate);
     }, 1000.0 / rate);
 }
 
+function refleshMessages(rate) {
+    getResource('message/get', function(arg) {
+        if (arg.length > 0) msg(arg);
+    });
 
-function setADCStatus(_adc_mode) {
-    adc_mode = _adc_mode;
-    if (adc_mode == true) {
-        getResource('adc/start', function(arg) {
-            msg("ADC Start");
-            //log.console(arg);
-        });
-    } else {
-        getResource('adc/stop', function(arg) {
-            msg("ADC Stop");
-            //log.console(arg);
-        });
-    }
+    setTimeout(function() {
+        refleshMessages(rate);
+    }, 1000.0 / rate);
 }
 
-
-function setVisionStatus(_vision_mode) {
-    vision_mode = _vision_mode;
-    if (vision_mode == true) {
-        getResource('vision/start', function(arg) {
-            msg("Vision Start");
-            //log.console(arg);
-        });
+function manageProgram(type, flag) {
+    flags[type] = flag;
+    if (flags[type] == true) {
+        getResource(type + '/start', function(arg) { });
     } else {
-        getResource('vision/stop', function(arg) {
-            msg("Vision Stop");
-            //log.console(arg);
-        });
+        getResource(type + '/stop', function(arg) { });
     }
 }
 
@@ -191,7 +146,6 @@ function getResource(resource, callback) {
         type: "GET",
         url: resource,
         success: function(result, status, xhr) {
-            //console.log(result);
             callback(result);
         },
         error: function(result, status, xhr) {
@@ -199,6 +153,17 @@ function getResource(resource, callback) {
         }
     });
 }
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
 function updateScreen() {
     var view_terrain = new Image();
@@ -226,22 +191,6 @@ function updateScreen() {
 function clearCanvas() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-}
-
-function setDriveMode(obj) {
-    // set menu active
-    $("#drive_mode").children().each(function(i) {$("#drive_mode").children(i).removeClass("active");});
-    obj.parent().addClass("active");
-
-    // show controller
-    $(".control_pane_item").each(function(i,ob) { jQuery(ob).hide(); });
-    if (obj.text()[0] == "M") $("#manual_pane").show();
-    else if (obj.text()[0] == "A") $("#autonav_pane").show();
-}
-
-function toggleButtonGroup(obj) {
-    obj.siblings().each(function(i, ob) { jQuery(ob).removeClass("active"); });
-    obj.addClass("active");
 }
 
 function setGoal() {
@@ -272,12 +221,13 @@ function setGoal() {
 }
 
 function sendGoal() {
-    $.post('/send_goal', {
-        startU: y2u(0),
-        startV: x2v(0),
-        goalU: y2u($("#goalY").val()),
-        goalV: x2v($("#goalX").val()),
-    }).done(function() {
+    $("#alert-path").hide();
+    $.post('/vision/set_goal', {
+        startU: y2u(0),                 startV: x2v(0),
+        goalU:  y2u($("#goalY").val()), goalV:  x2v($("#goalX").val()),
+    }).done(function(arg) {
+    }).fail(function(arg) {
+        $("#alert-path").show();
     });
 }
 
@@ -323,7 +273,10 @@ function drawPath(waypoints) {
 
 function msg(text) {
     var date = new Date();
-    var date_fmt = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    //var date_fmt = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    var date_fmt = ('0' + date.getHours()).slice(-2) + ':'
+                   + ('0' + (date.getMinutes())).slice(-2) + ':'
+                   + ('0' + (date.getSeconds())).slice(-2)
     $("#notification").html(date_fmt + "--" + text + "<br/>" + $("#notification").html());
 }
 
