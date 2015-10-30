@@ -161,9 +161,8 @@ class VisionServer(server_wrapper.ServerBase):
                     # Inspot turn
                     obc.set_turn_mode(True)
                     cmd_list.append('r{:.2f}'.format(cmd_theta))
+                print 'cmd_list: ', cmd_list
                 self.sendto_obc(cmd_list)
-            else: 
-                self.wp = None
 
 
 
@@ -236,7 +235,7 @@ class VisionServer(server_wrapper.ServerBase):
             self.flag_de = True
             print 'drive enable'
         elif arr[0] == 'f':
-            self.sendto_obc(['f',])
+            self.sendto_obc(['f0',])
             self.flag_de = False 
             print 'drive disable'
         elif arr[0] == 'g':

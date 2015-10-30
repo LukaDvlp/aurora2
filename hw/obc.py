@@ -15,6 +15,7 @@ steer_angle = 0
 def setup():
     global sock
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
     #sock.connect(("127.0.0.1", 5555))
     sock.connect(("192.168.201.11", 13000))
 
@@ -22,7 +23,11 @@ def setup():
 def send_cmd(cmd_list):
     for c in cmd_list:
         print c
-        sock.sendall(capsulate(c))
+        try:
+            sock.sendall(capsulate(c))
+        except:
+            print '!!!!! COMMAND FAILED !!!!!!'
+            pass
 
 
 def serialize(hexstr):
@@ -87,10 +92,11 @@ def set_steer_angle(angle):
     timeout = 0
     if abs(steer_angle - angle) > 15:
         timeout = 2
-    steer_angle = angle
-    send_cmd(cmd_list)
-    if timeout > 0:
-        print 'INFO(control): Wait {} secs for steering'.format(timeout)
-        time.sleep(timeout)  # wait for preparation
-
+    if abs(steer_angle - angle) > 0.1:
+        steer_angle = angle
+        send_cmd(cmd_list)
+        if timeout > 0:
+            print 'INFO(control): Wait {} secs for steering'.format(timeout)
+            time.sleep(timeout)  # wait for preparation
+    
 

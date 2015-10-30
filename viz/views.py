@@ -123,7 +123,7 @@ class ADCDaemon(DaemonBase):
     def worker(self):
         idx = 0
         if self.status[idx]:
-            vlt = read(idx)
+            vlt = self.read(idx)
             self.data[idx][0] = (vlt[0] - 2.5185) / 1.2075  # AccX
             self.data[idx][1] = (vlt[1] - 2.5172) / 1.2138  # AccY
             self.data[idx][2] = (vlt[2] - 2.5195) / 1.2075  # AccZ
@@ -135,7 +135,7 @@ class ADCDaemon(DaemonBase):
 
         idx = 1
         if self.status[idx]:
-            vlt = read(idx)
+            vlt = self.read(idx)
             self.data[idx][0] = (vlt[0] - 2.5) / 1.2  # AccX  ???
             self.data[idx][1] = (vlt[1] - 2.5) / 1.2  # AccY  ???
             self.data[idx][2] = (vlt[2] - 2.5) / 1.2  # AccZ  ???
@@ -156,7 +156,7 @@ class ADCDaemon(DaemonBase):
         data = np.zeros(self.adc_channels)
         if self.status[idx]:
             reg = self.adc[idx].read_input_registers(0, self.adc_channels)
-            data = raw2volt(reg.registers)
+            data = self.raw2volt(reg.registers)
         return data
     
 
@@ -164,7 +164,7 @@ class ADCDaemon(DaemonBase):
         return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
 
 
-    def raw2volt(raw):
+    def raw2volt(self, raw):
         return np.array([10.0 * (m - 2**15) / 2**15 for m in raw])
 
 

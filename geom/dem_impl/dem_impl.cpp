@@ -5,6 +5,7 @@
  *  @brief   DEM generation with Layered V-Disparity method, etc.
  */
 
+#include <stdio.h>
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -180,7 +181,7 @@ void computeMGC_DynProg(const cv::Mat &imVD, cv::Mat &mgc)
         cv::reduce(lines, max_line, 0, CV_REDUCE_MAX);
         cmap(cv::Rect(0, i, cmap.cols, 1)) += max_line;
     }
-    cv::imshow("cost map", cmap * 5);
+    //cv::imshow("cost map", cmap * 5);
     //cv::waitKey(1);
 
     // compute main ground curve
@@ -221,9 +222,9 @@ void computeMGC_DynProg(const cv::Mat &imVD, cv::Mat &mgc)
         {
             cv::line(imMGC, route.at(i - 1), route.at(i), 255, 1);
         }
-        cv::imshow("vd", imVD * 100);
-        cv::imshow("mgc", imMGC);
-        cv::waitKey(-1);
+        //cv::imshow("vd", imVD * 100);
+        //cv::imshow("mgc", imMGC);
+        //cv::waitKey(-1);
     }
 
     mgc = cv::Mat(route).reshape(1).t();

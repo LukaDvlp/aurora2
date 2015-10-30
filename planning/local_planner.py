@@ -35,14 +35,14 @@ def compute_waypoints(hzdmap, start, goal):
     # scaling for efficiency. adjust scale value if needed
     scale = 0.1
     cmap = cv2.resize(cmap, (int(cmap.shape[1] * scale), int(cmap.shape[0] * scale)))
-    start_pix *= scale
-    goal_pix *= scale
+    start_pix = np.array([int(scale * p) for p in start_pix])
+    goal_pix = np.array([int(scale * p) for p in goal_pix])
 
     # perform astar pathplanning
     wp_pix = _compute_waypoints(cmap, start_pix, goal_pix)
     if (wp_pix is None):
         return np.empty((0, 3))
-    wp_pix /= scale
+    wp_pix = np.array([1.0 * p / scale for p in wp_pix])
 
     # compute waypoints in real world
     wp = np.empty((0, 3))
@@ -123,8 +123,8 @@ if __name__ == '__main__':
     for i in range(wp.shape[0]):
         p = mapper.hzdmap.get_pose_pix(wp[i])
         cv2.circle(cmap, (int(p[0]), int(p[1])), 3, (255, 0, 0), -1)
-    cv2.imshow('result', cmap)
-    cv2.waitKey(30)
+    #cv2.imshow('result', cmap)
+    #cv2.waitKey(30)
 
     raw_input()
 
