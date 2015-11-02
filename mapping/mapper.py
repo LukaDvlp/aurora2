@@ -21,16 +21,18 @@ from aurora.loc import transformations as tfm
 vizmap = []
 clsmap = []
 hzdmap = []
+elvmap = []
 
 def setup(yamlfile):
     '''load config from yaml'''
     data = open(yamlfile).read()
     config = yaml.load(data)
 
-    global vizmap, clsmap, hzdmap
+    global vizmap, clsmap, hzdmap, elvmap
     vizmap = Mapper(config['vizmap'])
     clsmap = Mapper(config['clsmap'])
     hzdmap = Mapper(config['hzdmap'])
+    elvmap = Mapper(config['elvmap'])
 
     rover.setup(config['rover_yaml'])
 
@@ -65,6 +67,27 @@ class Mapper():
         if map_updated:
             wHb, self.pose = self.compose_homography(pose)
         self.wHi = np.dot(wHb, self.bHi)
+
+        # update map
+        new_frame = cv2.warpPerspective(image, self.wHi, self.shape, flags=cv2.INTER_NEAREST)
+        self.mosaic[new_frame > 0] += self.lamb * (new_frame[new_frame > 0] - self.mosaic[new_frame > 0])
+
+        # add trajectory point
+        cv2.circle(self.traj, tuple(int(x) for x in self.pose[:2]), 2, (255, 0, 0), -1)
+        
+
+    def add_topview_image(self, image, pose):
+        '''
+            Add new topview image to map
+        '''
+        wHb, self.pose = self.compose_homography(pose)
+        map_updated = self.move_map()
+        if map_updated:
+            wHb, self.pose = self.compose_homography(pose)
+        #self.wHi = np.dot(wHb, self.bHi)
+        self.wHi = wHb  # no need to project
+        self.wHi[0, 2] -= 200
+        self.wHi[1, 2] -= 200
 
         # update map
         new_frame = cv2.warpPerspective(image, self.wHi, self.shape, flags=cv2.INTER_NEAREST)

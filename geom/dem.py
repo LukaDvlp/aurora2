@@ -48,7 +48,10 @@ def setup(yamlfile):
     dem_impl.setup(dem, rover)
 
 def lvd(imD):
-    return dem_impl.lvd(imD)
+    imDEM = dem_impl.lvd(imD)
+    imDEM[imDEM == 0] = -1000
+    #return cv2.flip(cv2.flip(imDEM.T, 0), 1)  # v: forward   u: left
+    return imDEM.T
 
 
 

@@ -92,8 +92,10 @@ class VisionServer(server_wrapper.ServerBase):
         cv2.fillPoly(imD_mask, [np.array([[90, 470], [10, 70], [0, 70], [0, 470]], dtype=np.int32)], 0, 8)
         imD *= imD_mask
         imDEM = dem.lvd(imD)
-        imDEM -= np.amin(imDEM)
-        imDEM *= 255.0 / (np.amax(imDEM) - np.amin(imDEM))
+        imDEM3 = np.zeros((imDEM.shape[0], imDEM.shape[1], 3))
+        imDEM3[:, :, 2] = (imDEM + 0.5) * 255
+        #imDEM -= np.amin(imDEM)
+        #imDEM *= 255.0 / (np.amax(imDEM) - np.amin(imDEM))
         #imDEM -= -0.3
         #imDEM *= 255.0 / 1.0
 
@@ -101,6 +103,7 @@ class VisionServer(server_wrapper.ServerBase):
         mapmask = np.zeros(imL.shape, dtype=np.uint8)
         mapmask[200:400, 120:520, :] = 1
         mapper.vizmap.add_image(imL * mapmask, p)
+        mapper.elvmap.add_topview_image(imDEM3, p)
 
 
         print "==================="
@@ -171,6 +174,8 @@ class VisionServer(server_wrapper.ServerBase):
             topmap = mapper.vizmap.get_map(trajectory=True, grid=True, centered=True)
             cv2.circle(topmap, (topmap.shape[1]/2, topmap.shape[0]/2), 25, (140, 20, 130), 4)
 
+            elvmap = mapper.elvmap.get_map(trajectory=True, grid=True, centered=True)
+
             ovlmap = topmap.copy()
             ovlimL = imL.copy()
             # draw waypoints
@@ -211,8 +216,9 @@ class VisionServer(server_wrapper.ServerBase):
             cv2.imwrite(os.path.join(datadir, '_images_left.png'), ovlimL)
             cv2.imwrite(os.path.join(datadir, '_images_visual_map.png'), cv2.flip(cv2.flip(ovlmap, 1), 0))
             cv2.imwrite(os.path.join(datadir, '_images_disparity.png'), cv2.resize(255 * plt.cm.jet(imD.astype(np.uint8)), (320, 240)))
-            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), 
-                cv2.flip(cv2.transpose(cv2.flip(255 * plt.cm.jet(imDEM.astype(np.uint8)), 1)), 1))
+            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(elvmap, 1), 0))
+            #cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), 
+            #cv2.flip(cv2.transpose(cv2.flip(255 * plt.cm.jet(imDEM.astype(np.uint8)), 1)), 1))
 
 
         if frame % 15 == 0:
