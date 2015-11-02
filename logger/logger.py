@@ -8,35 +8,47 @@ Usage:
     $ python logger.py
 """
 
+import time
 
-import socket
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-
-def setup():
-    pass
+from aurora.core import server_wrapper
+from aurora.core import rate
+from aurora.viz import daemons
 
 
-def loop():
-    pass
+class LoggerServer(server_wrapper.ServerBase):
+    def setup(self):
+        self.r = rate.Rate(10, name="logger")
+        self.cnt = 0
+
+        self.adc = daemons.ADCDaemon(hz=10)
+        self.dpc = daemons.DynPickDaemon(hz=10)
+
+        self.adc.start()
+        self.dpc.start()
+
+        pass
 
 
-## Sample code
+    def worker(self):
+        #print time.time(), '1 2 3 4 5'
+        #print views.adc_daemon.get_data()
+        print self.adc.get_data()
+        print self.dpc.get_data()
+        self.r.sleep()
+        self.cnt += 1
+
+
+    def handler(self, msg):
+        pass
+
+
+    def finalize(self):
+        print 'logger closing'
+        self.adc.stop()
+        pass
+
 if __name__ == '__main__':
-    server.bind(('localhost', 6969))
-    server.listen(1)
 
-    while True:
-        try:
-            csock, caddr = server.accept()
-        except:
-            continue
+    server_wrapper.start(("localhost", 8888), LoggerServer)
 
-        print 'accepted from {}'.format(caddr)
-
-        while True:
-            print '1 2 3 4 6'
-            time.sleep(1)
-
-    raw_input()  # wait key input
 
