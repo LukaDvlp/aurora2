@@ -168,14 +168,10 @@ class ADCDaemon(DaemonBase):
 class DynPickDaemon(DaemonBase):
     def __init__(self, hz, name="dynpick"):
         DaemonBase.__init__(self, hz, name)
-        #self.dpc = [serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5)]
-        self.dpc = [serial.Serial('/dev/ttyp0', timeout=5), 
-                    serial.Serial('/dev/ttyp0', timeout=5), 
-                    serial.Serial('/dev/ttyp0', timeout=5), 
-                    serial.Serial('/dev/ttyp0', timeout=5)]
+        self.dpc = [serial.Serial('/dev/ttyS8', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyS9', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyS5', baudrate=921600, timeout=5)]
         self.status = [False] * len(self.dpc)
         self.dpc_channels = 6
         self.data = np.zeros((len(self.dpc), self.dpc_channels))
@@ -230,8 +226,7 @@ class DynPickDaemon(DaemonBase):
 class CompassDaemon(DaemonBase):
     def __init__(self, hz, name="compass"):
         DaemonBase.__init__(self, hz, name)
-        #self.compass = serial.Serial('/dev/ttyS6', baudrate=19200, timeout=5)
-        self.compass = serial.Serial('/dev/ttyp0', timeout=5)
+        self.compass = serial.Serial('/dev/ttyS6', baudrate=19200, timeout=5)
         self.status = self.compass.isOpen()
         self.channels = 3
         self.data = np.zeros(self.channels)

@@ -31,12 +31,12 @@ class LoggerServer(server_wrapper.ServerBase):
         self.log_dpc = logging.getLogger('logger_dynpick')
         self.log_cms = logging.getLogger('logger_compass')
 
-        #self.adc = daemons.ADCDaemon(hz=10)
-        #self.dpc = daemons.DynPickDaemon(hz=10)
+        self.adc = daemons.ADCDaemon(hz=10)
+        self.dpc = daemons.DynPickDaemon(hz=10)
         self.cms = daemons.CompassDaemon(hz=1)
 
         self.adc.start()
-        #self.dpc.start()
+        self.dpc.start()
         self.cms.start()
 
 
@@ -47,9 +47,10 @@ class LoggerServer(server_wrapper.ServerBase):
         #print time.time(), '1 2 3 4 5'
         #print views.adc_daemon.get_data()
         stamp = time.time()
-        #self.log_adc.info(self.adc.get_data())
-        #self.log_adc.info(self.dpc.get_data())
-        self.log_cms.info(self.cms.get_data())
+        self.log_adc.info(self.adc.get_data())
+        self.log_dpc.info(self.dpc.get_data())
+        if self.cnt % 10:
+            self.log_cms.info(self.cms.get_data())
         self.r.sleep()
         self.cnt += 1
 
@@ -60,8 +61,8 @@ class LoggerServer(server_wrapper.ServerBase):
 
     def finalize(self):
         print 'logger closing'
-        #self.adc.stop()
-        #self.dpc.stop()
+        self.adc.stop()
+        self.dpc.stop()
         self.cms.stop()
         pass
 
