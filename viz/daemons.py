@@ -168,10 +168,14 @@ class ADCDaemon(DaemonBase):
 class DynPickDaemon(DaemonBase):
     def __init__(self, hz, name="dynpick"):
         DaemonBase.__init__(self, hz, name)
-        self.dpc = [serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5)]
+        #self.dpc = [serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
+        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
+        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
+        #            serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5)]
+        self.dpc = [serial.Serial('/dev/ttyp0', timeout=5), 
+                    serial.Serial('/dev/ttyp0', timeout=5), 
+                    serial.Serial('/dev/ttyp0', timeout=5), 
+                    serial.Serial('/dev/ttyp0', timeout=5)]
         self.status = [False] * len(self.dpc)
         self.dpc_channels = 6
         self.data = np.zeros((len(self.dpc), self.dpc_channels))
@@ -186,7 +190,7 @@ class DynPickDaemon(DaemonBase):
 
 
     def setup(self):
-        for i in len(self.dpc):
+        for i in range(len(self.dpc)):
             if not self.dpc[i].isOpen():
                 self.dpc[i].open()
             self.status[i] = self.dpc[i].isOpen()
@@ -195,13 +199,13 @@ class DynPickDaemon(DaemonBase):
 
 
     def worker(self):
-        for idx in len(self.dpc):
-            meas = read(idx)
+        for idx in range(len(self.dpc)):
+            meas = self.read(idx)
             self.data[idx] = self.gain[idx] * (meas - self.offset[idx])
 
 
     def finalize(self):
-        self.data = [np.zeros(self.dpc_channels), np.zeros(self.dpc_channels)]
+        self.data = np.zeros((len(self.dpc), self.dpc_channels))
         map(lambda a: a.close(), itertools.compress(self.dpc, self.status))
         self.set_msg("DynPick serial closed")
 
@@ -209,10 +213,64 @@ class DynPickDaemon(DaemonBase):
     def read(self, idx):
         data = np.zeros(self.dpc_channels)
         if self.status[idx]:
-            self.dpc[idx].send("R")
+            self.dpc[idx].write("R")
             res = self.dpc[idx].readline()
         return np.array([int(res[ 1: 5], 16), int(res[ 5: 9], 16), int(res[ 9:13], 16),
                          int(res[13:17], 16), int(res[17:21], 16), int(res[21:25], 16)])
+    
+
+    def get_data(self):
+        return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
+
+
+# =============================================================== #
+
+
+class CompassDaemon(DaemonBase):
+    def __init__(self, hz, name="compass"):
+        DaemonBase.__init__(self, hz, name)
+        #self.compass = serial.Serial('/dev/ttyS6', baudrate=19200, timeout=5)
+        self.compass = serial.Serial('/dev/ttyp0', timeout=5)
+        self.status = self.compass.isOpen()
+        self.channels = 3
+        self.data = np.zeros(self.channels)
+        self.buf = ''
+
+
+    def setup(self):
+        if not self.compass.isOpen():
+            self.compass.open()
+            self.status = self.compass.isOpen()
+        self.set_msg('Compass connection: {}'.format(self.status))
+        self.data = np.zeros(self.channels)
+
+
+    def worker(self):
+        self.data = self.read()
+
+
+    def finalize(self):
+        self.data = np.zeros(self.channels)
+        self.compass.close()
+        self.status = self.compass.isOpen()
+        self.set_msg("Compass serial closed")
+
+
+    def read(self):
+        if self.status:
+            self.buf += self.compass.read(self.compass.inWaiting())
+            if '\n' in self.buf:
+                line, self.buf = self.buf.split('\n')[-2:]
+                a = line.split(',')
+                if len(a) > 0 and a[0] == '$PTNTHPR':
+                    try:
+                        h = float(l[1])
+                        status_h = l[2]
+                        if status_h != 'N':
+                            self.data[0] = h
+                        pass
+                    except:
+                        pass
     
 
     def get_data(self):

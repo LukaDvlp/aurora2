@@ -22,9 +22,11 @@ class LoggerServer(server_wrapper.ServerBase):
 
         self.adc = daemons.ADCDaemon(hz=10)
         self.dpc = daemons.DynPickDaemon(hz=10)
+        self.cms = daemons.CompassDaemon(hz=1)
 
         self.adc.start()
         self.dpc.start()
+        self.cms.start()
 
         pass
 
@@ -32,8 +34,10 @@ class LoggerServer(server_wrapper.ServerBase):
     def worker(self):
         #print time.time(), '1 2 3 4 5'
         #print views.adc_daemon.get_data()
-        print self.adc.get_data()
-        print self.dpc.get_data()
+        stamp = time.time()
+        print get_time_formatted(stamp), self.adc.get_data()
+        print get_time_formatted(stamp), self.dpc.get_data()
+        print get_time_formatted(stamp), self.cms.get_data()
         self.r.sleep()
         self.cnt += 1
 
@@ -46,6 +50,10 @@ class LoggerServer(server_wrapper.ServerBase):
         print 'logger closing'
         self.adc.stop()
         pass
+
+
+    def get_time_formatted(self, d):
+        return d.strftime("%Y-%m-%dT%H:%M:%S.") + d.strftime("%f")[:3]
 
 if __name__ == '__main__':
 
