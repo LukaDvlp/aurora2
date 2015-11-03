@@ -173,9 +173,15 @@ void computeMGC_DynProg(const cv::Mat &imVD, cv::Mat &mgc)
     for (int i = 1; i < cmap.rows; ++i)
     {
         cv::Mat lines = cv::Mat::zeros(3, cmap.cols, cmap.type());
-        cmap(cv::Rect(1, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(0, 0, lines.cols - 1, 1)));
-        cmap(cv::Rect(0, i - 1, cmap.cols    , 1)).copyTo(lines(cv::Rect(0, 1, lines.cols    , 1)));
-        cmap(cv::Rect(0, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(1, 2, lines.cols - 1, 1)));
+        for (int j = 1; j < cmap.cols - 1; ++j)
+            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j);
+        for (int j = 0; j < cmap.cols    ; ++j)
+            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j);
+        for (int j = 0; j < cmap.cols - 1; ++j)
+            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j + 1);
+        //cmap(cv::Rect(1, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(0, 0, lines.cols - 1, 1)));
+        //cmap(cv::Rect(0, i - 1, cmap.cols    , 1)).copyTo(lines(cv::Rect(0, 1, lines.cols    , 1)));
+        //cmap(cv::Rect(0, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(1, 2, lines.cols - 1, 1)));
 
         cv::Mat max_line;
         cv::reduce(lines, max_line, 0, CV_REDUCE_MAX);
@@ -259,8 +265,13 @@ void lvd(const cv::Mat &imD, cv::Mat &dem) {
         // coordinate transform
         cv::Mat uvd1(4, mgc.cols, CV_64F);
         uvd1.row(0) = cv::Scalar(0);
-        mgc.row(1).copyTo(uvd1.row(1));
-        mgc.row(0).copyTo(uvd1.row(2));
+        for (int i = 0; i < mgc.cols; ++i)
+	{
+		uvd1.at<double>(1, i) = mgc.at<double>(1, i);
+		uvd1.at<double>(2, i) = mgc.at<double>(0, i);
+	}
+        //mgc.row(1).copyTo(uvd1.row(1));
+        //mgc.row(0).copyTo(uvd1.row(2));
         uvd1.row(3) = cv::Scalar(1);
 
         cv::Mat X = params_.Q * uvd1;

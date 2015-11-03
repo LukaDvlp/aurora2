@@ -16,15 +16,26 @@ handlers:
         filename: log/adc.log
         maxBytes: 10240000
         backupCount: 1000
+    file_dynpick:
+        class : logging.handlers.RotatingFileHandler
+        formatter: simple
+        filename: log/dynpick.log
+        maxBytes: 10240000
+        backupCount: 1000
     file_compass:
         class : logging.handlers.RotatingFileHandler
         formatter: simple
         filename: log/compass.log
-        maxBytes: 1024
+        maxBytes: 10240000
+        backupCount: 1000
 loggers:
     logger_adc:
         level: DEBUG
         handlers: [file_adc]
+        propagate: no
+    logger_dynpick:
+        level: DEBUG
+        handlers: [file_dynpick]
         propagate: no
     logger_compass:
         level: DEBUG
@@ -32,5 +43,5 @@ loggers:
         propagate: no
 root:
     level: DEBUG
-    handlers: [file_adc, file_compass]
+    handlers: [file_compass]
 
