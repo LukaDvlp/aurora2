@@ -20,5 +20,5 @@ elvmap:
              [-1.5, 1.5]]
     lvd:
         max_disparity: 128
-        grid_size: 0.1
+        grid_size: 0.2
 rover_yaml: config/rover_coords.yaml
