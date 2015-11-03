@@ -59,6 +59,9 @@ class VisionServer(server_wrapper.ServerBase):
         self.next_goal = None
         self.wp = np.empty((0, 3))
         self.flag_de = False
+
+        self.datadir = 'log/{}'.format(time.time())
+        os.mkdir(self.datadir)
     
 
     def worker(self):
@@ -70,11 +73,15 @@ class VisionServer(server_wrapper.ServerBase):
             print "No image found"
             self.rate_pl.sleep()
             return
-        #imL, imR = camera.rectify_stereo(imL, imR)
-        imLg = cv2.cvtColor(imL, cv2.COLOR_BGR2GRAY)
-        imRg = cv2.cvtColor(imR, cv2.COLOR_BGR2GRAY)
 
         ## save image
+        cv2.imwrite('{}/L{:06d}.jpg'.format(self.datadir, frame), imL)
+        cv2.imwrite('{}/R{:06d}.jpg'.format(self.datadir, frame), imR)
+
+        ## rectify, grayscale
+        imL, imR = camera.rectify_stereo(imL, imR)
+        imLg = cv2.cvtColor(imL, cv2.COLOR_BGR2GRAY)
+        imRg = cv2.cvtColor(imR, cv2.COLOR_BGR2GRAY)
 
         ## compute odometry
         pTc = vo.update_stereo(imLg, imRg)
@@ -93,7 +100,7 @@ class VisionServer(server_wrapper.ServerBase):
         imD *= imD_mask
         imDEM = dem.lvd(imD)
         imDEM3 = np.zeros((imDEM.shape[0], imDEM.shape[1], 3))
-        imDEM3[:, :, 2] = (imDEM + 0.5) * 255
+        imDEM3[:, :, 2] = (imDEM + 3) * 255 / 3
         #imDEM -= np.amin(imDEM)
         #imDEM *= 255.0 / (np.amax(imDEM) - np.amin(imDEM))
         #imDEM -= -0.3
@@ -174,7 +181,7 @@ class VisionServer(server_wrapper.ServerBase):
             topmap = mapper.vizmap.get_map(trajectory=True, grid=True, centered=True)
             cv2.circle(topmap, (topmap.shape[1]/2, topmap.shape[0]/2), 25, (140, 20, 130), 4)
 
-            elvmap = mapper.elvmap.get_map(trajectory=True, grid=True, centered=True)
+            elvmap = mapper.elvmap.get_map(trajectory=True, grid=False, centered=True)
 
             ovlmap = topmap.copy()
             ovlimL = imL.copy()
@@ -216,7 +223,7 @@ class VisionServer(server_wrapper.ServerBase):
             cv2.imwrite(os.path.join(datadir, '_images_left.png'), ovlimL)
             cv2.imwrite(os.path.join(datadir, '_images_visual_map.png'), cv2.flip(cv2.flip(ovlmap, 1), 0))
             cv2.imwrite(os.path.join(datadir, '_images_disparity.png'), cv2.resize(255 * plt.cm.jet(imD.astype(np.uint8)), (320, 240)))
-            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(elvmap, 1), 0))
+            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(255 * plt.cm.jet(elvmap[:, :, 2].astype(np.uint8)), 1), 0))
             #cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), 
             #cv2.flip(cv2.transpose(cv2.flip(255 * plt.cm.jet(imDEM.astype(np.uint8)), 1)), 1))
 

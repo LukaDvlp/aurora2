@@ -248,8 +248,9 @@ void lvd(const cv::Mat &imD, cv::Mat &dem) {
         convertVD(imD, imVD, params_.mask == i + 1);
         cv::threshold(imVD, imVD, 2, 0, cv::THRESH_TOZERO);  // filter small values
         imVD(cv::Rect(0, 0, 10, imVD.rows)) = cv::Scalar(0);  // filter small disparities
-        //cv::imshow("imVD", imVD);
-        //cv::waitKey(1);
+        imVD(cv::Rect(100, 0, imVD.cols - 100, imVD.rows)) = cv::Scalar(0);  // filter small disparities
+        //cv::imshow("imVD", 8 * imVD);
+        //cv::waitKey(-1);
 
         // compute main ground curve
         cv::Mat mgc;

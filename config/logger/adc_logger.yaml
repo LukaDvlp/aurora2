@@ -14,7 +14,8 @@ handlers:
         formatter: simple
         #filename: /home/kubotalab/FieldData/Oshima2015/Day1/adc.log
         filename: log/adc.log
-        maxBytes: 1024
+        maxBytes: 10240000
+        backupCount: 1000
     file_compass:
         class : logging.handlers.RotatingFileHandler
         formatter: simple

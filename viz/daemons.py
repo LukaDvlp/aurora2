@@ -118,10 +118,10 @@ class ADCDaemon(DaemonBase):
         idx = 0
         if self.status[idx]:
             vlt = self.read(idx)
-            self.data[idx][0] = (vlt[0] - 2.5185) / 1.2075  # AccX
-            self.data[idx][1] = (vlt[1] - 2.5172) / 1.2138  # AccY
-            self.data[idx][2] = (vlt[2] - 2.5195) / 1.2075  # AccZ
-            self.data[idx][3] = (vlt[3] - 2.4067) / 0.0799  # Gyro
+            self.data[idx][0] = (vlt[0] - 2.5185) / 1.2075  * 9.8067 # AccX
+            self.data[idx][1] = (vlt[1] - 2.5172) / 1.2138  * 9.8067 # AccY
+            self.data[idx][2] = (vlt[2] - 2.5195) / 1.2075  * 9.8067 # AccZ
+            self.data[idx][3] = (vlt[3] - 2.4067) / 0.0799  * 9.8067 # Gyro
             self.data[idx][4] = np.arcsin((vlt[4] - 2.5064) / 3.8134)  # IncX
             self.data[idx][5] = np.arcsin((vlt[5] - 2.4962) / 3.9963)  # IncY
             self.data[idx][6] = vlt[6]
@@ -155,7 +155,7 @@ class ADCDaemon(DaemonBase):
     
 
     def get_data(self):
-        return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
+        return ' '.join(['{:.6f}'.format(m) for m in self.data.ravel()])
 
 
     def raw2volt(self, raw):
@@ -221,7 +221,7 @@ class DynPickDaemon(DaemonBase):
     
 
     def get_data(self):
-        return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
+        return ' '.join(['{:.6f}'.format(m) for m in self.data.ravel()])
 
 
 # =============================================================== #
@@ -275,7 +275,7 @@ class CompassDaemon(DaemonBase):
     
 
     def get_data(self):
-        return ' '.join(['{:.2f}'.format(m) for m in self.data.ravel()])
+        return ' '.join(['{:.6f}'.format(m) for m in self.data.ravel()])
 
 
 # =============================================================== #
@@ -318,7 +318,7 @@ class VisionDaemon(DaemonBase):
 
 
     def get_pose(self):
-        return ' '.join(['{:.2f}'.format(p) for p in self.pose])
+        return ' '.join(['{:.6f}'.format(p) for p in self.pose])
 
 
     def set_drive(self, flag):
