@@ -102,8 +102,8 @@ class DaemonBase(threading.Thread):
 class ADCDaemon(DaemonBase):
     def __init__(self, hz, name="adc"):
         DaemonBase.__init__(self, hz, name)
-        self.adc = [ModbusTcpClient('192.168.201.17', port=502),
-                    ModbusTcpClient('192.168.201.13', port=502)]
+        self.adc = [ModbusTcpClient('192.168.201.21', port=502),
+                    ModbusTcpClient('192.168.201.22', port=502)]
         self.adc_channels = 8
         self.data = np.zeros((2, self.adc_channels))
 
