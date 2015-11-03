@@ -61,7 +61,7 @@ class VisionServer(server_wrapper.ServerBase):
         self.flag_de = False
 
         self.datadir = 'log/{}'.format(time.time())
-        os.mkdir(self.datadir)
+        #os.mkdir(self.datadir)
     
 
     def worker(self):
@@ -75,8 +75,8 @@ class VisionServer(server_wrapper.ServerBase):
             return
 
         ## save image
-        cv2.imwrite('{}/L{:06d}.jpg'.format(self.datadir, frame), imL)
-        cv2.imwrite('{}/R{:06d}.jpg'.format(self.datadir, frame), imR)
+        #cv2.imwrite('{}/L{:06d}.jpg'.format(self.datadir, frame), imL)
+        #cv2.imwrite('{}/R{:06d}.jpg'.format(self.datadir, frame), imR)
 
         ## rectify, grayscale
         imL, imR = camera.rectify_stereo(imL, imR)
