@@ -9,6 +9,10 @@ Usage:
 """
 
 import time
+import logging
+import logging.config
+import yaml
+from aurora.core import core
 
 from aurora.core import server_wrapper
 from aurora.core import rate
@@ -20,13 +24,20 @@ class LoggerServer(server_wrapper.ServerBase):
         self.r = rate.Rate(10, name="logger")
         self.cnt = 0
 
+        adc_yaml = core.get_full_path('config/logger/adc_logger.yaml')
+        data = open(adc_yaml).read()
+        logging.config.dictConfig(yaml.load(data))
+        self.log_adc = logging.getLogger('logger_adc')
+        self.log_cms = logging.getLogger('logger_compass')
+
         self.adc = daemons.ADCDaemon(hz=10)
-        self.dpc = daemons.DynPickDaemon(hz=10)
-        self.cms = daemons.CompassDaemon(hz=1)
+        #self.dpc = daemons.DynPickDaemon(hz=10)
+        #self.cms = daemons.CompassDaemon(hz=1)
 
         self.adc.start()
-        self.dpc.start()
-        self.cms.start()
+        #self.dpc.start()
+        #self.cms.start()
+
 
         pass
 
@@ -35,9 +46,8 @@ class LoggerServer(server_wrapper.ServerBase):
         #print time.time(), '1 2 3 4 5'
         #print views.adc_daemon.get_data()
         stamp = time.time()
-        print get_time_formatted(stamp), self.adc.get_data()
-        print get_time_formatted(stamp), self.dpc.get_data()
-        print get_time_formatted(stamp), self.cms.get_data()
+        self.log_adc.info(self.adc.get_data())
+        #self.log_cms.info(self.cms.get_data())
         self.r.sleep()
         self.cnt += 1
 
@@ -49,6 +59,8 @@ class LoggerServer(server_wrapper.ServerBase):
     def finalize(self):
         print 'logger closing'
         self.adc.stop()
+        #self.dpc.stop()
+        #self.cms.stop()
         pass
 
 

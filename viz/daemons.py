@@ -200,8 +200,9 @@ class DynPickDaemon(DaemonBase):
 
     def worker(self):
         for idx in range(len(self.dpc)):
-            meas = self.read(idx)
-            self.data[idx] = self.gain[idx] * (meas - self.offset[idx])
+            if self.status[idx]:
+                meas = self.read(idx)
+                self.data[idx] = self.gain[idx] * (meas - self.offset[idx])
 
 
     def finalize(self):
@@ -213,7 +214,7 @@ class DynPickDaemon(DaemonBase):
     def read(self, idx):
         data = np.zeros(self.dpc_channels)
         if self.status[idx]:
-            self.dpc[idx].write("R")
+            #self.dpc[idx].write("R")
             res = self.dpc[idx].readline()
         return np.array([int(res[ 1: 5], 16), int(res[ 5: 9], 16), int(res[ 9:13], 16),
                          int(res[13:17], 16), int(res[17:21], 16), int(res[21:25], 16)])
