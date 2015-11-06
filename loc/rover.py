@@ -27,6 +27,8 @@ bTi = []  # rover base to left image
 iTb = []  # left image to rover base
 cTr = []  # left camera to right camera
 rTc = []  # right camera to left camera
+cTs = []  # left camera to lidar
+sTc = []  # lidar to left camera
 
 KL = []  # camera matrix for left camera
 KR = []  # camera matrix for right camera
@@ -53,7 +55,9 @@ def setup(yamlfile):
     bTi = np.dot(bTc, cTi)
     iTb = inv(bTi)
     rTc = tfm.translation_matrix([0, rconfig['baseline'], 0])
-    cTr = inv(rTc)
+    cTr = inv(rTc) 
+    sTc = tfm.translation_matrix([0, rconfig['baseline'] / 2.0, 0])
+    cTs = inv(sTc) 
 
     global width, length
     width = rconfig['width']

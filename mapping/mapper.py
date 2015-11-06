@@ -53,7 +53,7 @@ class Mapper():
         self.pose = np.append(self.center, [0])  # [u, v, theta]
 
         # images
-        self.mosaic = np.zeros((self.shape[1], self.shape[0], 3), dtype=np.uint8)
+        self.mosaic = np.zeros((self.shape[1], self.shape[0], 3), dtype=np.float)
         self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
         self.init_grid()
 
@@ -118,7 +118,7 @@ class Mapper():
 
 
     def get_cmap(self, centered=False):
-        cmap = 255 * np.array(np.sum(self.mosaic, axis=2) > 0, dtype=np.uint8)
+        cmap = 255 * np.array(np.sum(self.mosaic, axis=2) > 5, dtype=np.uint8)
         rover_pix = np.array([self.meter2pix(rover.width), self.meter2pix(rover.length)])
         d = int(np.ceil(np.linalg.norm(rover_pix)))
         rover_space = np.zeros((d, d), dtype=np.uint8)
@@ -206,7 +206,7 @@ class Mapper():
 
         old_mosaic = self.mosaic
         old_traj = self.traj
-        self.mosaic = np.zeros(self.mosaic.shape, dtype=np.uint8)
+        self.mosaic = np.zeros(self.mosaic.shape, dtype=np.float)
         self.traj = np.zeros(self.mosaic.shape, dtype=np.uint8)
         self.init_grid()
         if self.pose[0] < w3:     

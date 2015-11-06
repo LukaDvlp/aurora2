@@ -100,8 +100,8 @@ def loop():
         #rockmask = np.array(np.logical_or(rockmask, rockmask2) * 255, dtype=np.uint8)
         #rockmask = cv2.medianBlur(rockmask, 21)
         rocks = np.zeros(imL.shape, dtype=np.uint8)
-        rocks[:, :, 2] = rockmask
         rocks[rocks == 0] = 1
+        rocks[:, :, 2] = rockmask
 
         # stereo
         imD = dense_stereo.disparity(imLg, imRg)

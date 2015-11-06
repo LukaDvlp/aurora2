@@ -14,6 +14,11 @@ import time
 import yaml
 import Queue
 
+import logging
+#logging.basicConfig(format='[%(levelname)s] %(asctime)s %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='[%(levelname)s] %(asctime)s %(message)s', level=logging.DEBUG, filename='log/vision.log')
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -59,9 +64,12 @@ class VisionServer(server_wrapper.ServerBase):
         self.next_goal = None
         self.wp = np.empty((0, 3))
         self.flag_de = False
+        
+        self.distance = 0
+        self.prev_pose = np.zeros(3)
 
-        self.datadir = 'log/{}'.format(time.time())
-        #os.mkdir(self.datadir)
+        self.datadir = 'log/image/{}'.format(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+        os.mkdir(self.datadir)
     
 
     def worker(self):
@@ -70,13 +78,13 @@ class VisionServer(server_wrapper.ServerBase):
         ## get image
         frame, imL, imR = camera.get_stereo_images()
         if imL is None or imR is None: 
-            print "No image found"
+            logger.error("No image found")
             self.rate_pl.sleep()
             return
 
         ## save image
-        #cv2.imwrite('{}/L{:06d}.jpg'.format(self.datadir, frame), imL)
-        #cv2.imwrite('{}/R{:06d}.jpg'.format(self.datadir, frame), imR)
+        cv2.imwrite('{}/L{:06d}.jpg'.format(self.datadir, frame), imL)
+        cv2.imwrite('{}/R{:06d}.jpg'.format(self.datadir, frame), imR)
 
         ## rectify, grayscale
         imL, imR = camera.rectify_stereo(imL, imR)
@@ -87,11 +95,38 @@ class VisionServer(server_wrapper.ServerBase):
         pTc = vo.update_stereo(imLg, imRg)
         p = self.pose.update_from_matrix(pTc)
         #print 'INFO(nav): X={:.2f}, Y={:.2f}, THETA={:.1f}'.format(p[0], p[1], math.degrees(p[2]))
-        self.sendq.put('xyh {:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2]))
+        #self.sendq.put('xyh {:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2]))
+        self.distance += np.linalg.norm(self.prev_pose[:2] - p[:2])
+        self.prev_pose = p
+        self.sendq.put('xyhd {:.3f} {:.3f} {:.3f} {:.3f}'.format(p[0], p[1], p[2], self.distance))
 
         # stereo
         imD = dense_stereo.disparity(imLg, imRg)
         imD = np.array(imD / 16., dtype=np.float)
+        imD[imD < 0] = 0
+        #print np.unique(imD.astype(np.float32))
+
+        _imXYZ = dense_stereo.reproject(imD.astype(np.float32), rover.Q.astype(np.float32))
+        _imXYZ[_imXYZ[:, :, 2] < 0] = 0
+        _imXYZ[_imXYZ[:, :, 2] > 10] = 0
+        X = np.resize(_imXYZ, (_imXYZ.shape[0] * _imXYZ.shape[1], 3)).T
+        Y = tfm.transformp(X, rover.bTi)
+        imXYZ = np.resize(Y.T, _imXYZ.shape)
+        #print imXYZ
+        #print np.unique(imXYZ[:, :, 2])
+        #print np.amin(imXYZ[:, :, 2]), np.amax(imXYZ[:, :, 2])
+        rocks = 255 * np.array(imXYZ[:, :, 2] > 0.2, dtype=np.uint8)
+        rocks[imD == 0] = 0
+
+        # rocks
+        #rocks = 255 * np.array(imLg > 200, dtype=np.uint8)
+
+        kern = np.ones((15, 15), dtype=np.uint8)
+        rocks = cv2.dilate(cv2.erode(rocks, kern), kern)
+        rocks3 = np.zeros((rocks.shape[0], rocks.shape[1], 3), dtype=np.uint8)
+        rocks3[rocks == 0] = 1
+        rocks3[:, :, 2] = rocks
+        #rocks3[rocks == 0] = 1
 
         # dem
         imD_mask = np.zeros(imD.shape, dtype=np.uint8)
@@ -100,25 +135,24 @@ class VisionServer(server_wrapper.ServerBase):
         imD *= imD_mask
         imDEM = dem.lvd(imD)
         imDEM3 = np.zeros((imDEM.shape[0], imDEM.shape[1], 3))
-        imDEM3[:, :, 2] = (imDEM + 3) * 255 / 3
-        #imDEM -= np.amin(imDEM)
-        #imDEM *= 255.0 / (np.amax(imDEM) - np.amin(imDEM))
-        #imDEM -= -0.3
-        #imDEM *= 255.0 / 1.0
+        imDEM3[:, :, 2] = (imDEM + 3) * 255 / 6
 
         ## update map
         mapmask = np.zeros(imL.shape, dtype=np.uint8)
         mapmask[200:400, 120:520, :] = 1
         mapper.vizmap.add_image(imL * mapmask, p)
+        mapper.hzdmap.add_image(rocks3 * mapmask, p)
         mapper.elvmap.add_topview_image(imDEM3, p)
 
 
         print "==================="
-        print "frame", frame
-        print "self.p", p
+        logger.debug('frame {} stamp {}'.format(frame, stamp))
+        logger.debug('pose={}'.format(p))
+        logger.debug('distance={}'.format(self.distance))
         print "self.next_goal", self.next_goal
         print "self.goals", self.goals.queue
-        print "self.wp", self.wp
+        #print "self.wp", self.wp
+
         ## planning
         if self.next_goal is None:
             try:
@@ -127,8 +161,8 @@ class VisionServer(server_wrapper.ServerBase):
                 self.next_goal = None
 
         if self.next_goal is not None:
-            if self.distance(self.next_goal, p[:2]) < 0.2:
-                self.sendq.put('! Goal reached')
+            if self.get_distance(self.next_goal, p[:2]) < 0.5:
+                self.sendq.put('!  *** Goal reached *** ')
                 self.sendto_obc(['f',])
                 self.wp = np.empty((0, 3))
                 self.next_goal = None
@@ -140,10 +174,10 @@ class VisionServer(server_wrapper.ServerBase):
             goal_rel = (goal_rel[0, 3], goal_rel[1, 3], 0)
             self.wp = local_planner.compute_waypoints(mapper.hzdmap, (0, 0, 0), goal_rel)
 
-        if frame % 5 == 0 and self.wp.shape[0] > 0:
-            # compute pose of next waypoint in relative frame
+        if frame % 1 == 0 and self.wp.shape[0] > 0:
+            # compute pose of next waypoint in local frame
             wp_rel = np.dot(np.linalg.inv(self.pose.matrix_from_pose(self.origin)), self.pose.matrix_from_pose(self.wp[0, :]))
-            if self.distance(self.wp[0, :], np.zeros(3)) < 0.2:
+            if self.get_distance(self.wp[0, :], np.zeros(3)) < 0.5:
                 self.wp = np.delete(self.wp, 0, axis=0)
 
             # generate command
@@ -151,27 +185,40 @@ class VisionServer(server_wrapper.ServerBase):
                 next_wp_rel = self.wp[0, :].ravel()
                 oTp = np.dot(np.linalg.inv(self.pose.matrix_from_pose(self.origin)), self.pose.matrix_from_pose(p))
                 p_rel = self.pose.pose_from_matrix(oTp)
-                print next_wp_rel
-                print p_rel
-                cmd_arc = self.distance(next_wp_rel, p_rel)
+                #print next_wp_rel
+                #print p_rel
+                cmd_arc = self.get_distance(next_wp_rel, p_rel)
                 cmd_theta = -math.degrees(np.arctan2(next_wp_rel[1] - p_rel[1], next_wp_rel[0] - p_rel[0]))
-                print 'INFO(path): R={:.2f} THETA={:.2f}'.format(cmd_arc, cmd_theta)
+                logger.debug('R={:.2f} THETA={:.2f}'.format(cmd_arc, cmd_theta))
 
                 cmd_list = []
-                if abs(cmd_theta) <= 45:
+                if abs(cmd_theta) > 165:
+                    # back
+                    obc.set_turn_mode(False)
+                    cmd_list.append('d{:.2f}'.format(-cmd_arc))
+                elif abs(cmd_theta) > 90:
+                    # don't handle backwards waypoint. shutdown planning
+                    obc.set_turn_mode(False)
+                    cmd_list.append('f')
+                    logger.warn('  *** AKI never goes back! (Planning canceled) ***')
+                    self.next_goal = None
+                elif abs(cmd_theta) > 45:
+                    # back step
+                    obc.set_turn_mode(False)
+                    obc.set_steer_angle(0)
+                    #cmd_list.append('d{:.2f}'.format(-cmd_arc))
+                    cmd_list.append('d{:.2f}'.format(-1))
+                else: #if abs(cmd_theta) <= 45:
                     # steering drive
                     obc.set_turn_mode(False)
                     obc.set_steer_angle(cmd_theta)
                     cmd_list.append('d{:.2f}'.format(cmd_arc))
-                elif abs(cmd_theta) > 165:
-                    # back
-                    obc.set_turn_mode(False)
-                    cmd_list.append('d{:.2f}'.format(-cmd_arc))
+                '''
                 else:
                     # Inspot turn
                     obc.set_turn_mode(True)
                     cmd_list.append('r{:.2f}'.format(cmd_theta))
-                print 'cmd_list: ', cmd_list
+                '''
                 self.sendto_obc(cmd_list)
 
 
@@ -182,9 +229,14 @@ class VisionServer(server_wrapper.ServerBase):
             cv2.circle(topmap, (topmap.shape[1]/2, topmap.shape[0]/2), 25, (140, 20, 130), 4)
 
             elvmap = mapper.elvmap.get_map(trajectory=True, grid=False, centered=True)
+            #print np.unique(elvmap)
+            hzdmap = mapper.hzdmap.get_map(trajectory=True, grid=True, centered=True)
 
             ovlmap = topmap.copy()
             ovlimL = imL.copy()
+
+            ovlmap[hzdmap[:,:,2] > 200] = hzdmap[hzdmap[:,:,2]>200]
+
             # draw waypoints
             if self.wp.shape[0] > 0:
                 p0 = mapper.vizmap.get_pose_pix(np.zeros(3))
@@ -223,7 +275,9 @@ class VisionServer(server_wrapper.ServerBase):
             cv2.imwrite(os.path.join(datadir, '_images_left.png'), ovlimL)
             cv2.imwrite(os.path.join(datadir, '_images_visual_map.png'), cv2.flip(cv2.flip(ovlmap, 1), 0))
             cv2.imwrite(os.path.join(datadir, '_images_disparity.png'), cv2.resize(255 * plt.cm.jet(imD.astype(np.uint8)), (320, 240)))
-            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(255 * plt.cm.jet(elvmap[:, :, 2].astype(np.uint8)), 1), 0))
+            cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(elvmap[:, :, 2].astype(np.uint8), 1), 0))
+            cv2.imwrite(os.path.join(datadir, '_images_hazard_map.png'), cv2.flip(cv2.flip(hzdmap[:, :, 2].astype(np.uint8), 1), 0))
+            #cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), cv2.flip(cv2.flip(255 * plt.cm.jet(elvmap[:, :, 2].astype(np.uint8)), 1), 0))
             #cv2.imwrite(os.path.join(datadir, '_images_elev_map.png'), 
             #cv2.flip(cv2.transpose(cv2.flip(255 * plt.cm.jet(imDEM.astype(np.uint8)), 1)), 1))
 
@@ -257,6 +311,9 @@ class VisionServer(server_wrapper.ServerBase):
             print 'goal set to {}'.format(arr[1:])
         elif arr[0] == 'c':
             print 'goal clear'
+            self.sendto_obc(['f0',])
+            self.goals = Queue.Queue()
+            self.next_goal = None
 
 
     def finalize(self):
@@ -269,7 +326,7 @@ class VisionServer(server_wrapper.ServerBase):
             obc.send_cmd(cmd_list)
 
 
-    def distance(self, a, b):
+    def get_distance(self, a, b):
         return np.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
 
 

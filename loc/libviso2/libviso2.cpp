@@ -56,11 +56,22 @@ void update_stereo(const cv::Mat &imL, const cv::Mat &imR, cv::Mat &pTc) {
     static int32_t dims[] = {imL.cols, imL.rows, imL.cols};
     static cv::Mat ppTp = cv::Mat::eye(4, 4, CV_64F);
 
+    float theta = 0.002;
+    cv::Mat T_bias = cv::Mat::zeros(4, 4, CV_64F);
+    T_bias.at<double>(0, 0) = cos(theta);
+    T_bias.at<double>(0, 1) = sin(theta);
+    T_bias.at<double>(1, 0) = -sin(theta);
+    T_bias.at<double>(1, 1) = cos(theta);
+    T_bias.at<double>(2, 2) = 1;
+    T_bias.at<double>(3, 3) = 1;
+
     // compute motion
     if (viso_->process(imL.data, imR.data, dims)) {
         Matrix motion = Matrix::inv(viso_->getMotion());
         cv::Mat piTci(4, 4, CV_64F, &motion.val[0][0]);
         pTc = bTi_ * piTci * iTb_;
+        if (pTc.at<double>(0, 3) > 0.04) 
+            pTc = pTc * T_bias;
         pTc.copyTo(ppTp);
     }
     else {

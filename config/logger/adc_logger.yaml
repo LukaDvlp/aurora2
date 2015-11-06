@@ -43,5 +43,5 @@ loggers:
         propagate: no
 root:
     level: DEBUG
-    handlers: [file_compass]
+    handlers: [file_adc, file_dynpick, file_compass]
 

@@ -72,7 +72,9 @@
                 <div id="map-container">
                     <img id="map-snapshot" class="covered"/>
                     <canvas id="canvas" class="covered"></canvas>
+<!--
                     <img src="../static/img/compass.png" class="covered" style="transform: rotate(-120deg); margin: 10px 30px;"/>
+-->
                 </div>
             </div>
 
@@ -116,12 +118,12 @@
                     <div class="sidebar-title"> Status </div>
                     <div class="sidebar-item">
                         <div>
-                            <span>North</span>
+                            <span>North (Y) </span>
                             <span id="global-position-north" class="lead">0.0</span>
                             <span>m</span>
                         </div>
                         <div>
-                            <span>East</span>
+                            <span>East (X) </span>
                             <span id="global-position-east" class="lead">0.0</span>
                             <span>m</span>
                         </div>
@@ -132,7 +134,7 @@
                         </div>
                         <div>
                             <span>Total Distance</span>
-                            <span id="global-position-y" class="lead">0.0</span>
+                            <span id="global-distance" class="lead">0.0</span>
                             <span>m</span>
                         </div>
                     </div>
@@ -179,30 +181,11 @@
                                 <input type="number" class="form-control" id="goalY" placeholder="<" max="5" min="-5" size="25" step="0.01">
                             </div>
                             <button id="btn-set-goal" type="submit" class="btn btn-default">Set</button>
-                            <button type="submit" class="btn btn-default">Delete</button>
+                            <button id="btn-delete-goal" type="submit" class="btn btn-default">Delete</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Program manager -->
-                <div id="program-manager-pane" title="Manage program">
-                    <div class="sidebar-title"> Manage Program </div>
-                    <div class="sidebar-item">
-                        <div class="program-manager-item">
-                            <input type="checkbox" name="adc-status" data-label-text="AD Cnv" data-label-width="80px" data-handle-width="80px" data-size="large">
-                        </div>
-                        <div class="program-manager-item">
-                            <input type="checkbox" name="vision-status" data-label-text="Vision" data-label-width="80px" data-handle-width="80px" data-size="large">
-                        </div>
-                        <div class="program-manager-item">
-                            <input type="checkbox" name="logger-status" data-label-text="Logger" data-label-width="80px" data-handle-width="80px" data-size="large">
-                        </div>
-                        <hr/>
-                        <div class="row program-manager-item">
-                            <input type="checkbox" name="drive-status" data-label-text="Drive" data-label-width="80px" data-handle-width="80px" data-size="large" data-off-color="danger">
-                        </div>
-                    </div>
-                </div>
 
             </div>
 
@@ -268,7 +251,7 @@
                     <div class="sidebar-item">
                         <form class="form-inline">
                             <div class="form-group">
-                                <label>Longitude</label>
+                                <LABEL>Longitude</label>
                                 <input type="text" class="form-control" id="goalX" placeholder="Forward">
                             </div>
                             <div class="form-group">
@@ -289,7 +272,21 @@
 
             <div id="column-tools3" class="col-lg-3">
 
+                <!-- msg pane -->
+                <div id="msg-pane" title="Log">
+                    <div class="sidebar-title"> Log </div>
+                    <div class="sidebar-item">
+                        <div id="notification">
+                        </div>
+                        <form class="form-inline">
+                            <button id="btn-download-log" type="submit" class="btn btn-default">Download</button>
+                        </form>
+                    </div>
+                </div>
+
+
                 <!-- Send direct command -->
+<!--
                 <div id="direct-command-pane" title="Send a command directly to the controller">
                     <div class="sidebar-title"> Direct Command </div>
                     <div class="sidebar-item">
@@ -308,8 +305,10 @@
                         </form>
                     </div>
                 </div>
+-->
 
                 <!-- Path Upload -->
+<!--
                 <div id="drive-selector" title="Upload waypoints information as a KML file">
                     <div class="sidebar-title"> Path Upload (kml)</div>
                     <div class="sidebar-item">
@@ -321,8 +320,10 @@
                         </form>
                     </div>
                 </div>
+-->
 
                 <!-- Special command -->
+<!--
                 <div id="special-command-pane" title="Send special commands">
                     <div class="sidebar-title"> Special Command </div>
                     <div class="sidebar-item">
@@ -332,19 +333,29 @@
                         </form>
                     </div>
                 </div>
+-->
             </div>
 
             <div id="column-tools4" class="col-lg-3">
 
-                <!-- msg pane -->
-                <div id="msg-pane" title="Log">
-                    <div class="sidebar-title"> Log </div>
+                <!-- Program manager -->
+                <div id="program-manager-pane" title="Manage program">
+                    <div class="sidebar-title"> Manage Program </div>
                     <div class="sidebar-item">
-                        <div id="notification">
+                        <div class="program-manager-item">
+                            <input type="checkbox" name="adc-status" data-label-text="AD Cnv" data-label-width="80px" data-handle-width="80px" data-size="large">
                         </div>
-                        <form class="form-inline">
-                            <button id="btn-download-log" type="submit" class="btn btn-default">Download</button>
-                        </form>
+                        <div class="program-manager-item">
+                            <input type="checkbox" name="vision-status" data-label-text="Vision" data-label-width="80px" data-handle-width="80px" data-size="large">
+                        </div>
+                        <div class="program-manager-item">
+                            <input type="checkbox" name="logger-status" data-label-text="Logger" data-label-width="80px" data-handle-width="80px" data-size="large">
+                        </div>
+                        <hr/>
+                        <div class="row program-manager-item">
+                            <input type="checkbox" name="drive-status" data-label-text="Drive" data-label-width="80px" data-handle-width="80px" data-size="large" data-off-color="danger">
+                        </div>
+                    </div>
                 </div>
 
             </div>

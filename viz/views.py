@@ -19,6 +19,7 @@ def message_get():
 adc_daemon    = daemons.ADCDaemon(hz=1)
 vision_daemon = daemons.VisionDaemon(hz=1)
 logger_daemon = daemons.LoggerDaemon(hz=1)
+compass_daemon    = daemons.CompassDaemon(hz=1)
 
 @app.route('/adc/start')
 def adc_start():
@@ -37,6 +38,25 @@ def adc_stop():
 @app.route('/adc/get_all')
 def adc_get_all():
     return adc_daemon.get_data()
+
+
+@app.route('/compass/start')
+def compass_start():
+    global compass_daemon
+    compass_daemon = daemons.CompassDaemon(hz=1)
+    compass_daemon.start()
+    return ""
+
+
+@app.route('/compass/stop')
+def compass_stop():
+    compass_daemon.stop()
+    return ""
+
+
+@app.route('/compass/get_all')
+def compass_get_all():
+    return compass_daemon.get_data()
 
 
 @app.route('/vision/start')

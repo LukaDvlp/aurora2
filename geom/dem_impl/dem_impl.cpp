@@ -95,7 +95,8 @@ class DemParams {
             if (i % 2) std::iter_swap(gnd_pts.begin() + 2 * i, gnd_pts.begin() + 2 * i + 1);
         }
 
-        cv::projectPoints(gnd_pts, rvec, tvec, K, cv::Mat(), img_pts);
+	cv::Mat d = cv::Mat::zeros(1, 4, CV_64F);
+        cv::projectPoints(gnd_pts, rvec, tvec, K, d, img_pts);
         cv::Mat(img_pts).convertTo(img_ptsi, cv::Mat(img_ptsi).type());
 
         // draw polygons on mask image
@@ -173,12 +174,12 @@ void computeMGC_DynProg(const cv::Mat &imVD, cv::Mat &mgc)
     for (int i = 1; i < cmap.rows; ++i)
     {
         cv::Mat lines = cv::Mat::zeros(3, cmap.cols, cmap.type());
-        for (int j = 1; j < cmap.cols - 1; ++j)
-            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j);
-        for (int j = 0; j < cmap.cols    ; ++j)
-            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j);
         for (int j = 0; j < cmap.cols - 1; ++j)
-            lines.at<uint>(0, j) = cmap.at<uint>(i - 1, j + 1);
+            lines.at<ushort>(0, j) = cmap.at<ushort>(i - 1, j + 1);
+        for (int j = 0; j < cmap.cols    ; ++j)
+            lines.at<ushort>(0, j) = cmap.at<ushort>(i - 1, j);
+        for (int j = 0; j < cmap.cols - 1; ++j)
+            lines.at<ushort>(0, j + 1) = cmap.at<ushort>(i - 1, j);
         //cmap(cv::Rect(1, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(0, 0, lines.cols - 1, 1)));
         //cmap(cv::Rect(0, i - 1, cmap.cols    , 1)).copyTo(lines(cv::Rect(0, 1, lines.cols    , 1)));
         //cmap(cv::Rect(0, i - 1, cmap.cols - 1, 1)).copyTo(lines(cv::Rect(1, 2, lines.cols - 1, 1)));
@@ -265,14 +266,15 @@ void lvd(const cv::Mat &imD, cv::Mat &dem) {
         // coordinate transform
         cv::Mat uvd1(4, mgc.cols, CV_64F);
         uvd1.row(0) = cv::Scalar(0);
-        for (int i = 0; i < mgc.cols; ++i)
+        for (int j = 0; j < mgc.cols; ++j)
 	{
-		uvd1.at<double>(1, i) = mgc.at<double>(1, i);
-		uvd1.at<double>(2, i) = mgc.at<double>(0, i);
+		uvd1.at<double>(1, j) = mgc.at<uint>(1, j);
+		uvd1.at<double>(2, j) = mgc.at<uint>(0, j);
 	}
         //mgc.row(1).copyTo(uvd1.row(1));
         //mgc.row(0).copyTo(uvd1.row(2));
         uvd1.row(3) = cv::Scalar(1);
+        //std::cout << uvd1 << std::endl;
 
         cv::Mat X = params_.Q * uvd1;
         X.row(0) = -cv::Scalar(params_.getYc(i));

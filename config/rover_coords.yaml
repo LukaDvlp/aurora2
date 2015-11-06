@@ -3,8 +3,8 @@ baseline: 0.30  # m
 tilt: 25  # degrees
 camera_height: 1.1  # m
 camera_yaml: config/camera_config.yaml
-width: 0.9  # m
-length: 0.9  # m
+width: 1.2  # m
+length: 1.2  # m
 
 #baseline: 0.10  # m
 #tilt: 20  # degrees

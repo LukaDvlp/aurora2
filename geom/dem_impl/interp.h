@@ -89,7 +89,7 @@ void interp1(const cv::Mat &x, const cv::Mat &y, const cv::Mat &new_x, cv::Mat &
         A.at<double>(3, i) = y.at<T>(i) - x.at<T>(i) * A.at<double>(2, i);
     }
     //A.col(A.cols - 2).copyTo(A.col(A.cols - 1));
-    for (int i = 0; i < xsize - 1; ++i)
+    for (int i = 0; i < A.rows; ++i)
         A.at<double>(i, A.cols - 1) = A.at<double>(i, A.cols - 2);
 
 

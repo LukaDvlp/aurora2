@@ -49,7 +49,7 @@ class LoggerServer(server_wrapper.ServerBase):
         stamp = time.time()
         self.log_adc.info(self.adc.get_data())
         self.log_dpc.info(self.dpc.get_data())
-        if self.cnt % 10:
+        if self.cnt % 10 == 0:
             self.log_cms.info(self.cms.get_data())
         self.r.sleep()
         self.cnt += 1

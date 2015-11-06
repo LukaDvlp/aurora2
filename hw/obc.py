@@ -6,6 +6,10 @@ import socket
 import struct
 import time
 
+import logging
+logging.basicConfig(format='[%(levelname)s] %(asctime)s %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 sock = None
 cmd_seq = 0
 
@@ -17,16 +21,20 @@ def setup():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
     #sock.connect(("127.0.0.1", 5555))
-    sock.connect(("192.168.201.11", 13000))
+    try:
+    	sock.connect(("192.168.201.11", 13000))
+    except:
+        pass
 
 
 def send_cmd(cmd_list):
     for c in cmd_list:
-        print c
+        logger.info('Commands Sent: {}'.format(c))
         try:
             sock.sendall(capsulate(c))
+	    pass
         except:
-            print '!!!!! COMMAND FAILED !!!!!!'
+            logger.error('  *** Command failed ***'.format(c))
             pass
 
 
@@ -86,10 +94,13 @@ def set_steer_angle(angle):
     '''
     global steer_angle 
     cmd_list = []
-    if abs(angle < 0.1): angle = 0
+    if abs(angle) < 0.1: angle = 0
+    if angle > 20: angle = 20
+    if angle < -20: angle = -20
     #cmd_list.append('s{:.2f}'.format(angle))
     cmd_list.append('u{:.2f}'.format(angle))
-    timeout = 0
+    print cmd_list
+    timeout = 0.5
     if abs(steer_angle - angle) > 15:
         timeout = 2
     if abs(steer_angle - angle) > 0.1:

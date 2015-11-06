@@ -168,10 +168,10 @@ class ADCDaemon(DaemonBase):
 class DynPickDaemon(DaemonBase):
     def __init__(self, hz, name="dynpick"):
         DaemonBase.__init__(self, hz, name)
-        self.dpc = [serial.Serial('/dev/ttyS8', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS9', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS4', baudrate=921600, timeout=5),
-                    serial.Serial('/dev/ttyS5', baudrate=921600, timeout=5)]
+        self.dpc = [serial.Serial('/dev/ttyAP4', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyAP5', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyAP0', baudrate=921600, timeout=5),
+                    serial.Serial('/dev/ttyAP1', baudrate=921600, timeout=5)]
         self.status = [False] * len(self.dpc)
         self.dpc_channels = 6
         self.data = np.zeros((len(self.dpc), self.dpc_channels))
@@ -210,10 +210,14 @@ class DynPickDaemon(DaemonBase):
     def read(self, idx):
         data = np.zeros(self.dpc_channels)
         if self.status[idx]:
-            #self.dpc[idx].write("R")
+            self.dpc[idx].write("R")
             res = self.dpc[idx].readline()
-        return np.array([int(res[ 1: 5], 16), int(res[ 5: 9], 16), int(res[ 9:13], 16),
+	    try:
+                data = np.array([int(res[ 1: 5], 16), int(res[ 5: 9], 16), int(res[ 9:13], 16),
                          int(res[13:17], 16), int(res[17:21], 16), int(res[21:25], 16)])
+            except:
+                pass
+        return data
     
 
     def get_data(self):
@@ -226,10 +230,10 @@ class DynPickDaemon(DaemonBase):
 class CompassDaemon(DaemonBase):
     def __init__(self, hz, name="compass"):
         DaemonBase.__init__(self, hz, name)
-        self.compass = serial.Serial('/dev/ttyS6', baudrate=19200, timeout=5)
+        self.compass = serial.Serial('/dev/ttyAP2', baudrate=19200, timeout=5)
         self.status = self.compass.isOpen()
         self.channels = 3
-        self.data = np.zeros(self.channels)
+        self.data = np.zeros((1, self.channels))
         self.buf = ''
 
 
@@ -238,11 +242,11 @@ class CompassDaemon(DaemonBase):
             self.compass.open()
             self.status = self.compass.isOpen()
         self.set_msg('Compass connection: {}'.format(self.status))
-        self.data = np.zeros(self.channels)
+        self.data = np.zeros((1, self.channels))
 
 
     def worker(self):
-        self.data = self.read()
+        self.data[0] = self.read()
 
 
     def finalize(self):
@@ -253,6 +257,7 @@ class CompassDaemon(DaemonBase):
 
 
     def read(self):
+        data = np.zeros(self.channels)
         if self.status:
             self.buf += self.compass.read(self.compass.inWaiting())
             if '\n' in self.buf:
@@ -260,13 +265,13 @@ class CompassDaemon(DaemonBase):
                 a = line.split(',')
                 if len(a) > 0 and a[0] == '$PTNTHPR':
                     try:
-                        h = float(l[1])
-                        status_h = l[2]
-                        if status_h != 'N':
-                            self.data[0] = h
-                        pass
+                        h = float(a[1])
+                        status_h = a[2]
+                        #if status_h != 'N':
+                        data[0] = 1.0 * h / 180.0 * np.pi
                     except:
                         pass
+        return data
     
 
     def get_data(self):
@@ -278,7 +283,7 @@ class CompassDaemon(DaemonBase):
 class VisionDaemon(DaemonBase):
     def __init__(self, hz, name="vision"):
         DaemonBase.__init__(self, hz, name)
-        self.pose = np.zeros(3)
+        self.pose = np.zeros(4)
         self.sendq = Queue.Queue()
 
     def setup(self):
@@ -287,17 +292,31 @@ class VisionDaemon(DaemonBase):
         ex = self.sock.connect_ex(("localhost", 7777))
         self.status = (ex == 0)
         self.set_msg('Socket open: {}'.format(self.status))
-        self.pose = np.zeros(3)
+        self.pose = np.zeros(4)
 
 
     def worker(self):
         if self.status:
             # recv
-            line = self.sock.recv(1024)
-            arr = line.split('\n')[0].split(' ')
-            if arr[0] == 'xyh':
-                self.pose = np.array([float(v) for v in arr[1:]])
-                print self.pose
+            try:
+                line = self.sock.recv(1024)
+                arr = line.split('\n')[0].split(' ')
+                print arr
+                if arr[0] == 'xyh':
+                    self.pose = np.array([float(v) for v in arr[1:]])
+                elif arr[0] == 'xyhd':
+                    self.pose = np.array([float(v) for v in arr[1:]])
+            except:
+                self.set_msg('recv failed')
+                pass
+                '''
+                self.sock.close()
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.settimeout(5)
+                ex = self.sock.connect_ex(("localhost", 7777))
+                self.status = (ex == 0)
+                '''
+
 
             # send
             while not self.sendq.empty():

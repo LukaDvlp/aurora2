@@ -1,6 +1,7 @@
 cameraL:
     uri: http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=640x480
     #uri: /home/kubotalab/Codes/aurora/log/1446534439.89/L{:06d}.jpg
+    #uri: /home/kubotalab/Codes/aurora/log/image/1446702781.31/L{:06d}.jpg
     f: 198.125
     uv0: [319.5, 239.5]
 ## H1 from today'S data
@@ -14,6 +15,7 @@ cameraL:
 cameraR:
     uri: http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=640x480
     #uri: /home/kubotalab/Codes/aurora/log/1446534439.89/R{:06d}.jpg
+    #uri: /home/kubotalab/Codes/aurora/log/image/1446702781.31/R{:06d}.jpg
     f: 198.125
     uv0: [319.5, 239.5]
 

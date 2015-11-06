@@ -1,9 +1,12 @@
 //!
 // Coordinate systems
 //
-dpm = 50  //  pix/meter
+dpm = 50;  //  pix/meter
 width  = $("#canvas").width();  // pix
 height = $("#canvas").height();  // pix
+
+//var past_xy = [0, 0];
+//var dist = 0;
 
 function pix2world(pix) { return pix / dpm; }
 function world2pix(meter) { return meter * dpm; }
@@ -37,6 +40,7 @@ function domReady() {
     //! switch setting
     $("[name=adc-status]").bootstrapSwitch('onSwitchChange', function() {
         manageProgram("adc", $(this).is(":checked"));
+        manageProgram("compass", $(this).is(":checked"));
     });
     $("[name=vision-status]").bootstrapSwitch('onSwitchChange', function() {
         manageProgram("vision", $(this).is(":checked"));
@@ -52,6 +56,7 @@ function domReady() {
     $("[name=cam-mode]").change(function() { flags['cam'] = $(this).val(); });
 
     $("#btn-set-goal").click(function(e) { e.preventDefault(); setGoal(); });
+    $("#btn-delete-goal").click(function(e) { e.preventDefault(); deleteGoal(); });
     $("#btn-download-log").click(function() { alert('not implemented'); });
 
     //! screen update setting
@@ -76,8 +81,8 @@ function refleshImages(rate) {
 
     switch (flags['cam']) {
         case "LEFT":
-            //$("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
-            $("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
+            $("#camera-snapshot").attr("src", "http://192.168.201.61/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
+            //$("#camera-snapshot").attr("src", getBaseUrl() + "img/_images_left.png?" + Math.random());
             break;
         case "RIGHT":
             $("#camera-snapshot").attr("src", "http://192.168.201.62/axis-cgi/jpg/image.cgi?resolution=320x240&" + Math.random());
@@ -115,6 +120,11 @@ function refleshMeasurements(rate) {
             $("#state-mob-power").text((data[12] * data[14]).toFixed(1));
             $("#state-com-power").text((data[13] * data[15]).toFixed(1));
         });
+
+        getResource('compass/get_all', function(arg) {
+            data = arg.split(" ").map(parseFloat);
+            $("#global-position-heading").text(rad2deg(data[0]).toFixed(1));
+        });
     }
 
     if (flags['vision']) {
@@ -123,7 +133,9 @@ function refleshMeasurements(rate) {
 
             $("#global-position-east").text(data[0].toFixed(2));
             $("#global-position-north").text(data[1].toFixed(2));
-            $("#global-position-heading").text(rad2deg(data[1]).toFixed(1));
+            //$("#global-position-heading").text(rad2deg(data[1]).toFixed(1));
+            $("#global-distance").text(data[3].toFixed(2));
+
         });
     }
 
@@ -251,6 +263,11 @@ function setGoal() {
             $("#alert-path").show();
         }
     });
+}
+
+function deleteGoal() {
+    $("#alert-path").hide();
+    getResource("/vision/goal/clear", function() { });
 }
 
 function makePath() {

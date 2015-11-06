@@ -23,7 +23,7 @@ class AStar(object):
         raise NotImplementedError
         
     def search(self, start, end):
-        if end.cost >= DANGER: return None, None
+        #if end.cost >= DANGER: return None, None
         openset = set()
         closedset = set()
         current = start
